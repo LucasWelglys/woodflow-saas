@@ -71,7 +71,8 @@ export default async function DashboardLayout({
             <User className="h-5 w-5" />
             <span className="text-xs truncate font-medium">{user.email}</span>
           </div>
-          <form action="/auth/signout" method="post">
+          {/* AQUI ESTÁ A CORREÇÃO DO BOTÃO SAIR */}
+          <form action="/api/auth/signout" method="post">
             <button
               type="submit"
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-stone-400 hover:text-red-400 transition-colors"
