@@ -59,9 +59,13 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
     }
 
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
       const { data: order, error: orderErr } = await supabase
         .from('pedidos')
         .insert({
+          marcenaria_id: user.id, // Adicionado explicitamente para RLS
           cliente_id: clienteId,
           descricao,
           valor_total: valorTotal,
@@ -74,7 +78,7 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
 
       const parcelasData = parcelas.map(p => ({
         pedido_id: order.id,
-        marcenaria_id: order.marcenaria_id,
+        marcenaria_id: user.id, // Adicionado explicitamente para RLS
         numero_parcela: p.numero,
         valor: p.valor,
         data_vencimento: p.dataVencimento,

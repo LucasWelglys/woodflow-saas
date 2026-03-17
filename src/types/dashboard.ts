@@ -6,6 +6,7 @@ export interface Cliente {
 }
 
 export interface Parcel {
+  id: string
   pedido_id: string
   marcenaria_id: string
   numero_parcela: number

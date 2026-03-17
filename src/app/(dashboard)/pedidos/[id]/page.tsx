@@ -99,11 +99,14 @@ export default function DetalhePedidoPage() {
   async function addCusto() {
     if (!novoCusto.descricao || novoCusto.valor <= 0) return
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
     const { error } = await supabase
       .from('custos_projeto')
       .insert({
         pedido_id: id,
-        marcenaria_id: order?.marcenaria_id,
+        marcenaria_id: user.id, // Forçado para garantir RLS
         ...novoCusto,
         data_custo: new Date().toISOString().split('T')[0]
       })

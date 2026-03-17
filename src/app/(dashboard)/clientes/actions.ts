@@ -16,21 +16,11 @@ export async function createCliente(data: {
         return { success: false, error: 'Usuário não autenticado' }
     }
 
-    // Primeiro, pegamos o ID da marcenaria vinculada ao usuário
-    const { data: marcenaria, error: marcError } = await supabase
-        .from('marcenarias')
-        .select('id')
-        .eq('dono_id', user.id)
-        .single()
-
-    if (marcError || !marcenaria) {
-        return { success: false, error: 'Marcenaria não encontrada para este usuário' }
-    }
-
+    // Conforme instrução do usuário: usar marcenaria_id: user.id diretamente
     const { data: cliente, error } = await supabase
         .from('clientes')
         .insert({
-            marcenaria_id: marcenaria.id,
+            marcenaria_id: user.id,
             nome: data.nome,
             email: data.email || null,
             telefone: data.telefone || null,
