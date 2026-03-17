@@ -1,0 +1,65 @@
+import { Settings, User, Bell, Shield, Palette } from 'lucide-react'
+
+export default function SettingsPage() {
+    return (
+        <div className="max-w-4xl">
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-stone-800">Configurações</h1>
+                <p className="text-stone-500">Gerencie as preferências da sua marcenaria e da sua conta.</p>
+            </div>
+
+            <div className="space-y-6">
+                {/* Seção Perfil */}
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div className="p-6 border-b border-stone-100 flex items-center gap-3">
+                        <User className="h-5 w-5 text-wood-dark" />
+                        <h2 className="font-semibold text-stone-800">Perfil da Marcenaria</h2>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">Nome da Marcenaria</label>
+                                <input type="text" className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-wood-light outline-none transition-all" placeholder="Ex: Marcenaria do Lucas" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-stone-700 mb-1">E-mail de Contato</label>
+                                <input type="email" className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-wood-light outline-none transition-all" placeholder="contato@exemplo.com" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Seção Sistema */}
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div className="p-6 border-b border-stone-100 flex items-center gap-3">
+                        <Settings className="h-5 w-5 text-wood-dark" />
+                        <h2 className="font-semibold text-stone-800">Preferências do Sistema</h2>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <div className="flex items-center justify-between py-2">
+                            <div className="flex items-center gap-3">
+                                <Bell className="h-5 w-5 text-stone-400" />
+                                <div>
+                                    <p className="text-sm font-medium text-stone-800">Notificações de Pedidos</p>
+                                    <p className="text-xs text-stone-500">Receba alertas quando um projeto mudar de status.</p>
+                                </div>
+                            </div>
+                            <div className="h-6 w-11 bg-stone-200 rounded-full relative cursor-pointer">
+                                <div className="absolute left-1 top-1 h-4 w-4 bg-white rounded-full transition-all"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                    <button className="px-6 py-2 rounded-xl border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button className="px-6 py-2 rounded-xl bg-wood-dark text-white font-medium hover:bg-wood-light transition-colors">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
