@@ -1,40 +1,49 @@
 'use client'
 
-import { Settings, User, Bell, Shield, Palette, Save } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Settings, User, Bell, Save } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { updateMarcenaria } from './actions'
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-    const [formData, setFormData] = useState({
-        nome: '',
-        email: ''
-    })
+
+    // Dados salvos no banco (para o botão cancelar)
+    const [originalData, setOriginalData] = useState({ nome: '', email: '', notificacoes: false })
+
+    // Dados editáveis no formulário
+    const [formData, setFormData] = useState({ nome: '', email: '' })
+    const [notificacoes, setNotificacoes] = useState(false)
 
     const supabase = createClient()
 
-    useEffect(() => {
-        async function loadSettings() {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+    // Função para carregar dados - Memorizada para ser usada no Cancelar
+    const loadSettings = useCallback(async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-            const { data } = await supabase
-                .from('marcenarias')
-                .select('nome, email_contato')
-                .eq('dono_id', user.id)
-                .single()
+        const { data } = await supabase
+            .from('marcenarias')
+            .select('nome, email_contato, notificacoes_pedidos')
+            .eq('dono_id', user.id)
+            .single()
 
-            if (data) {
-                setFormData({
-                    nome: data.nome || '',
-                    email: data.email_contato || ''
-                })
+        if (data) {
+            const loaded = {
+                nome: data.nome || '',
+                email: data.email_contato || '',
+                notificacoes: !!data.notificacoes_pedidos
             }
+            setFormData({ nome: loaded.nome, email: loaded.email })
+            setNotificacoes(loaded.notificacoes)
+            setOriginalData(loaded)
         }
-        loadSettings()
     }, [supabase])
+
+    useEffect(() => {
+        loadSettings()
+    }, [loadSettings])
 
     async function handleSave() {
         setLoading(true)
@@ -43,11 +52,13 @@ export default function SettingsPage() {
         try {
             const result = await updateMarcenaria({
                 nome: formData.nome,
-                email_contato: formData.email
+                email_contato: formData.email,
+                notificacoes_pedidos: notificacoes // Enviando o estado do switch
             })
 
             if (result.success) {
                 setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
+                setOriginalData({ nome: formData.nome, email: formData.email, notificacoes })
             } else {
                 setMessage({ type: 'error', text: result.error || 'Erro ao salvar.' })
             }
@@ -58,6 +69,12 @@ export default function SettingsPage() {
         }
     }
 
+    function handleCancelar() {
+        setFormData({ nome: originalData.nome, email: originalData.email })
+        setNotificacoes(originalData.notificacoes)
+        setMessage(null)
+    }
+
     return (
         <div className="max-w-4xl">
             <div className="mb-8">
@@ -66,11 +83,10 @@ export default function SettingsPage() {
             </div>
 
             {message && (
-                <div className={`mb-6 p-4 rounded-xl text-sm font-medium border ${
-                    message.type === 'success' 
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                    : 'bg-red-50 text-red-700 border-red-100'
-                }`}>
+                <div className={`mb-6 p-4 rounded-xl text-sm font-medium border ${message.type === 'success'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-red-50 text-red-700 border-red-100'
+                    }`}>
                     {message.text}
                 </div>
             )}
@@ -86,22 +102,22 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 mb-1">Nome da Marcenaria</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={formData.nome}
                                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-wood-light outline-none transition-all" 
-                                    placeholder="Ex: Marcenaria do Lucas" 
+                                    className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-wood-light outline-none transition-all"
+                                    placeholder="Ex: Marcenaria do Lucas"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-stone-700 mb-1">E-mail de Contato</label>
-                                <input 
-                                    type="email" 
+                                <input
+                                    type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-wood-light outline-none transition-all" 
-                                    placeholder="contato@exemplo.com" 
+                                    className="w-full px-4 py-2 rounded-lg border border-stone-200 focus:ring-2 focus:ring-wood-light outline-none transition-all"
+                                    placeholder="contato@exemplo.com"
                                 />
                             </div>
                         </div>
@@ -117,27 +133,32 @@ export default function SettingsPage() {
                     <div className="p-6 space-y-4">
                         <div className="flex items-center justify-between py-2">
                             <div className="flex items-center gap-3">
-                                <Bell className="h-5 w-5 text-stone-400" />
+                                <Bell className={`h-5 w-5 ${notificacoes ? 'text-wood-dark' : 'text-stone-400'}`} />
                                 <div>
                                     <p className="text-sm font-medium text-stone-800">Notificações de Pedidos</p>
                                     <p className="text-xs text-stone-500">Receba alertas quando um projeto mudar de status.</p>
                                 </div>
                             </div>
-                            <div className="h-6 w-11 bg-stone-200 rounded-full relative cursor-pointer">
-                                <div className="absolute left-1 top-1 h-4 w-4 bg-white rounded-full transition-all"></div>
+                            {/* Switch Interativo */}
+                            <div
+                                onClick={() => setNotificacoes(!notificacoes)}
+                                className={`h-6 w-11 rounded-full relative cursor-pointer transition-colors duration-200 ${notificacoes ? 'bg-wood-dark' : 'bg-stone-200'}`}
+                            >
+                                <div className={`absolute top-1 h-4 w-4 bg-white rounded-full transition-all duration-200 ${notificacoes ? 'left-6' : 'left-1'}`}></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-3">
-                    <button 
-                        className="px-6 py-2 rounded-xl border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 transition-colors"
+                    <button
+                        onClick={handleCancelar}
+                        className="px-6 py-2 rounded-xl border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
                         disabled={loading}
                     >
                         Cancelar
                     </button>
-                    <button 
+                    <button
                         onClick={handleSave}
                         disabled={loading}
                         className="flex items-center gap-2 px-6 py-2 rounded-xl bg-wood-dark text-white font-medium hover:bg-wood-light transition-colors disabled:opacity-50"
