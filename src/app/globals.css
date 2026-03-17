@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --wood-dark: #2D241E;
+    --wood-mid: #5D4037;
+    --wood-light: #8D6E63;
+    --caixa-verde: #2E7D32;
+    --alerta-laranja: #EF6C00;
+    --erro-vermelho: #C62828;
+  }
+}
+
+.bg-wood-dark { background-color: var(--wood-dark); }
+.text-wood-dark { color: var(--wood-dark); }
+.border-wood-dark { border-color: var(--wood-dark); }
+
+.bg-caixa-verde { background-color: var(--caixa-verde); }
+.text-caixa-verde { color: var(--caixa-verde); }
