@@ -20,7 +20,7 @@ export default async function DashboardLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-wood-dark text-white flex flex-col shadow-xl">
         <div className="p-6">
-          <Link href="/dashboard" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-lg">
               <Hammer className="h-6 w-6 text-white" />
             </div>
@@ -29,36 +29,36 @@ export default async function DashboardLayout({
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-2">
-          <Link 
-            href="/dashboard" 
+          <Link
+            href="/"
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
           >
             <LayoutDashboard className="h-5 w-5" />
             <span className="font-medium">Dashboard</span>
           </Link>
-          <Link 
-            href="/dashboard/pedidos" 
+          <Link
+            href="/pedidos"
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
           >
             <Package className="h-5 w-5" />
             <span className="font-medium">Pedidos</span>
           </Link>
-          <Link 
-            href="/dashboard/clientes" 
+          <Link
+            href="/clientes"
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
           >
             <Users className="h-5 w-5" />
             <span className="font-medium">Clientes</span>
           </Link>
-          <Link 
-            href="/dashboard/financeiro" 
+          <Link
+            href="/financeiro"
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
           >
             <TrendingUp className="h-5 w-5" />
             <span className="font-medium">Financeiro</span>
           </Link>
-          <Link 
-            href="/dashboard/configuracoes" 
+          <Link
+            href="/configuracoes"
             className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
           >
             <Settings className="h-5 w-5" />
@@ -72,7 +72,7 @@ export default async function DashboardLayout({
             <span className="text-xs truncate font-medium">{user.email}</span>
           </div>
           <form action="/auth/signout" method="post">
-            <button 
+            <button
               type="submit"
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-stone-400 hover:text-red-400 transition-colors"
             >
