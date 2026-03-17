@@ -11,9 +11,11 @@ import {
   Mail, 
   ChevronRight 
 } from 'lucide-react'
+import { NewClientModal } from '@/components/dashboard/new-client-modal'
 
 export default function ClientesPage() {
   const [loading, setLoading] = useState(true)
+  const [showNewClient, setShowNewClient] = useState(false)
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -42,12 +44,25 @@ export default function ClientesPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
+      {showNewClient && (
+        <NewClientModal 
+          onClose={() => setShowNewClient(false)}
+          onSuccess={() => {
+            setShowNewClient(false)
+            fetchClientes()
+          }}
+        />
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-wood-dark tracking-tight">Clientes</h2>
           <p className="text-stone-500 mt-1 font-medium">Gerencie sua base de contatos e histórico de pedidos.</p>
         </div>
-        <button className="flex items-center gap-2 bg-wood-dark text-white px-5 py-3 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg hover:shadow-black/10 active:scale-95">
+        <button 
+          onClick={() => setShowNewClient(true)}
+          className="flex items-center gap-2 bg-wood-dark text-white px-5 py-3 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg hover:shadow-black/10 active:scale-95"
+        >
           <Plus className="h-5 w-5" />
           Novo Cliente
         </button>
