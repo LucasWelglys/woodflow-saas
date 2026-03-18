@@ -3,25 +3,19 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
-export async function marcarComoPago(parcelaId: string) {
+export async function recalculateFinanceiro() {
   const supabase = createClient()
   
-  const { error } = await supabase
-    .from('parcelas')
-    .update({ 
-      status: 'pago',
-      data_recebimento: new Date().toISOString().split('T')[0]
-    })
-    .eq('id', parcelaId)
+  const { error } = await supabase.rpc('recalculate_financeiro_v1')
 
   if (error) {
-    console.error('Erro detalhado no Supabase:', error)
-    throw new Error(error.message)
+    console.error('Erro ao recalcular financeiro:', error)
+    throw new Error(`Falha no recálculo: ${error.message}`)
   }
 
+  revalidatePath('/financeiro')
   revalidatePath('/dashboard')
-  revalidatePath('/dashboard/financeiro')
-  revalidatePath('/dashboard/financeiro/vencidos')
+  revalidatePath('/pedidos')
   
   return { success: true }
 }
