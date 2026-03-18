@@ -15,6 +15,7 @@ export async function marcarComoPago(parcelaId: string) {
     .eq('id', parcelaId)
 
   if (error) {
+    console.error('Erro detalhado no Supabase:', error)
     throw new Error(error.message)
   }
 
