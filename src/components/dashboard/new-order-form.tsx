@@ -3,23 +3,25 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { X, Save } from 'lucide-react'
-import { Cliente } from '@/types/dashboard'
+import { Cliente, Order } from '@/types/dashboard'
+import { updatePedido } from '@/app/actions/pedidos'
 
 interface NewOrderFormProps {
   onClose: () => void
   onSuccess: () => void
+  editingOrder?: Order
 }
 
-export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
+export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  const [clienteId, setClienteId] = useState('')
+  const [clienteId, setClienteId] = useState(editingOrder?.cliente_id || '')
   const [clientes, setClientes] = useState<Cliente[]>([])
 
-  const [descricao, setDescricao] = useState('')
+  const [descricao, setDescricao] = useState(editingOrder?.descricao || '')
   const [valorTotalStr, setValorTotalStr] = useState('')
-  const [valorTotal, setValorTotal] = useState<number>(0)
+  const [valorTotal, setValorTotal] = useState<number>(editingOrder?.valor_total || 0)
   
   const [parcelas, setParcelas] = useState<{
     numero: number
@@ -31,6 +33,13 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
 
   const supabase = createClient()
 
+  // Formata o valor total inicial se estiver editando
+  useEffect(() => {
+    if (editingOrder) {
+      setValorTotalStr(formatCurrency((editingOrder.valor_total * 100).toString()))
+    }
+  }, [editingOrder])
+
   useEffect(() => {
     async function fetchClientes() {
       const { data } = await supabase.from('clientes').select('id, nome')
@@ -38,6 +47,30 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
     }
     fetchClientes()
   }, [supabase])
+
+  // Busca parcelas se estiver editando
+  useEffect(() => {
+    async function fetchParcelas() {
+      if (!editingOrder) return
+      
+      const { data, error: parcErr } = await supabase
+        .from('parcelas')
+        .select('*')
+        .eq('pedido_id', editingOrder.id)
+        .order('numero_parcela', { ascending: true })
+
+      if (data) {
+        setParcelas(data.map(p => ({
+          numero: p.numero_parcela,
+          valor: p.valor,
+          valorStr: formatCurrency((p.valor * 100).toString()),
+          dataVencimento: p.data_vencimento,
+          modalidade: p.modalidade
+        })))
+      }
+    }
+    fetchParcelas()
+  }, [editingOrder, supabase])
 
   const formatCurrency = (value: string) => {
     const nums = value.replace(/\D/g, '')
@@ -57,6 +90,10 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
     const formatted = formatCurrency(e.target.value)
     setValorTotalStr(formatted)
     setValorTotal(parseCurrency(formatted))
+    // Reset parcelas if total changed significantly, but maybe don't force for edit
+    if (!editingOrder) {
+        setParcelas([])
+    }
   }
 
   function generateInstallments() {
@@ -85,32 +122,46 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      const { data: order, error: orderErr } = await supabase
-        .from('pedidos')
-        .insert({
-          marcenaria_id: user.id, // Adicionado explicitamente para RLS
-          cliente_id: clienteId,
-          descricao,
-          valor_total: valorTotal,
-          status: 'orcamento'
-        })
-        .select()
-        .single()
-
-      if (orderErr) throw orderErr
-
-      const parcelasData = parcelas.map(p => ({
-        pedido_id: order.id,
-        marcenaria_id: user.id, // Adicionado explicitamente para RLS
+      const parcelasToSave = parcelas.map(p => ({
         numero_parcela: p.numero,
         valor: p.valor,
         data_vencimento: p.dataVencimento,
-        modalidade: p.modalidade,
-        status: 'pendente'
+        modalidade: p.modalidade
       }))
 
-      const { error: parcErr } = await supabase.from('parcelas').insert(parcelasData)
-      if (parcErr) throw parcErr
+      if (editingOrder) {
+        const result = await updatePedido(editingOrder.id, {
+          cliente_id: clienteId,
+          descricao,
+          valor_total: valorTotal
+        }, parcelasToSave)
+        
+        if (!result.success) throw new Error('Erro ao atualizar pedido')
+      } else {
+        const { data: order, error: orderErr } = await supabase
+          .from('pedidos')
+          .insert({
+            marcenaria_id: user.id,
+            cliente_id: clienteId,
+            descricao,
+            valor_total: valorTotal,
+            status: 'orcamento'
+          })
+          .select()
+          .single()
+
+        if (orderErr) throw orderErr
+
+        const { error: parcErr } = await supabase.from('parcelas').insert(
+          parcelasToSave.map(p => ({
+            ...p,
+            pedido_id: order.id,
+            marcenaria_id: user.id,
+            status: 'pendente'
+          }))
+        )
+        if (parcErr) throw parcErr
+      }
 
       onSuccess()
     } catch (err) {
@@ -125,8 +176,12 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-stone-100">
         <div className="px-8 py-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
           <div>
-            <h3 className="text-xl font-extrabold text-wood-dark tracking-tight">Novo Pedido</h3>
-            <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-0.5">Fase de Orçamento</p>
+            <h3 className="text-xl font-extrabold text-wood-dark tracking-tight">
+              {editingOrder ? 'Editar Pedido' : 'Novo Pedido'}
+            </h3>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-0.5">
+              {editingOrder ? `Pedido #${editingOrder.numero}` : 'Fase de Orçamento'}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
             <X className="h-5 w-5 text-stone-400" />

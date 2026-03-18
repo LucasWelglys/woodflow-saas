@@ -10,8 +10,13 @@ import {
   Search, 
   Filter, 
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react'
+import { deletePedido } from '@/app/actions/pedidos'
 import Link from 'next/link'
 
 export default function PedidosPage() {
@@ -20,6 +25,9 @@ export default function PedidosPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const supabase = createClient()
 
@@ -49,6 +57,20 @@ export default function PedidosPage() {
     fetchOrders()
   }, [fetchOrders])
 
+  async function handleDelete() {
+    if (!deletingId) return
+    setIsDeleting(true)
+    try {
+      await deletePedido(deletingId)
+      setDeletingId(null)
+      fetchOrders()
+    } catch (err) {
+      alert('Erro ao excluir pedido: ' + (err instanceof Error ? err.message : 'Erro desconhecido'))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const filteredOrders = orders.filter(o => 
     o.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     o.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,13 +81,18 @@ export default function PedidosPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {showNewOrder && (
+      {(showNewOrder || editingOrder) && (
         <NewOrderForm 
-          onClose={() => setShowNewOrder(false)} 
+          onClose={() => {
+            setShowNewOrder(false)
+            setEditingOrder(null)
+          }} 
           onSuccess={() => {
             setShowNewOrder(false)
+            setEditingOrder(null)
             fetchOrders()
-          }} 
+          }}
+          editingOrder={editingOrder || undefined}
         />
       )}
 
@@ -155,9 +182,24 @@ export default function PedidosPage() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => setEditingOrder(order)}
+                          className="p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-400 hover:text-wood-dark shadow-sm"
+                          title="Editar Pedido"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button 
+                          onClick={() => setDeletingId(order.id)}
+                          className="p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-400 hover:text-red-500 shadow-sm"
+                          title="Excluir Pedido"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
                         <Link 
                           href={`/pedidos/${order.id}`}
                           className="p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-400 hover:text-wood-dark shadow-sm"
+                          title="Ver Detalhes"
                         >
                           <ChevronRight className="h-5 w-5" />
                         </Link>
@@ -170,6 +212,37 @@ export default function PedidosPage() {
           </table>
         </div>
       </div>
+
+      {/* Modal de Confirmação de Exclusão */}
+      {deletingId && (
+        <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-stone-100 text-center">
+            <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-black text-stone-800 mb-2">Excluir Pedido?</h3>
+            <p className="text-stone-500 text-sm mb-8">
+              Esta ação é irreversível. Todas as parcelas vinculadas a este pedido serão removidas do financeiro.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeletingId(null)}
+                disabled={isDeleting}
+                className="flex-1 px-6 py-3 rounded-2xl border border-stone-200 text-stone-600 font-bold text-sm hover:bg-stone-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 px-6 py-3 rounded-2xl bg-red-500 text-white font-black text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
