@@ -15,7 +15,8 @@ import {
   CheckCircle2
 } from 'lucide-react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+import { converterParaContrato } from '@/app/actions/pedidos'
 
 interface Custo {
   id: string
@@ -27,7 +28,9 @@ interface Custo {
 
 export default function DetalhePedidoPage() {
   const { id } = useParams()
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
   const [order, setOrder] = useState<Order | null>(null)
   const [parcelas, setParcelas] = useState<Parcel[]>([])
   const [custos, setCustos] = useState<Custo[]>([])
@@ -123,6 +126,21 @@ export default function DetalhePedidoPage() {
     if (!error) fetchData()
   }
 
+  async function handleConverterParaContrato() {
+    if (!order || updating) return
+    setUpdating(true)
+    try {
+      await converterParaContrato(order.id)
+      await fetchData()
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      alert('Erro ao converter pedido para contrato.')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const totalCustos = custos.reduce((acc, curr) => acc + curr.valor, 0)
   const valorPedido = order?.valor_total || 0
   const lucroReal = valorPedido - totalCustos
@@ -136,7 +154,7 @@ export default function DetalhePedidoPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20">
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/pedidos" className="p-2 hover:bg-white rounded-xl border border-stone-200 text-stone-400 hover:text-wood-dark transition-all">
+        <Link href="/pedidos" className="p-2 hover:bg-white rounded-xl border border-stone-200 text-stone-400 hover:text-wood-dark transition-all">
           <ChevronLeft className="h-5 w-5" />
         </Link>
         <div>
@@ -329,6 +347,16 @@ export default function DetalhePedidoPage() {
           <section className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm space-y-4">
             <h4 className="text-xs font-extrabold text-stone-400 uppercase tracking-widest">Ações Rápidas</h4>
             <div className="grid grid-cols-1 gap-2">
+              {order.status === 'orcamento' && (
+                <button 
+                  onClick={handleConverterParaContrato}
+                  disabled={updating}
+                  className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="h-5 w-5" />
+                  {updating ? 'CONVERTENDO...' : 'CONVERTER EM CONTRATO'}
+                </button>
+              )}
               <button disabled className="w-full py-3 bg-stone-50 text-stone-400 border border-stone-100 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
                  Gerar Contrato PDF (Em breve)
               </button>

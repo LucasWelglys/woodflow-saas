@@ -156,7 +156,7 @@ export default function PedidosPage() {
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2">
                         <Link 
-                          href={`/dashboard/pedidos/${order.id}`}
+                          href={`/pedidos/${order.id}`}
                           className="p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-400 hover:text-wood-dark shadow-sm"
                         >
                           <ChevronRight className="h-5 w-5" />

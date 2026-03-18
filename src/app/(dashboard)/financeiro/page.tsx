@@ -64,7 +64,10 @@ export default function FinanceiroPage() {
     const today = new Date().toISOString().split('T')[0]
 
     // 1. Fetch Metrics (already correct but ensuring efficiency)
-    const { data: pedidos } = await supabase.from('pedidos').select('valor_total')
+    const { data: pedidos } = await supabase
+      .from('pedidos')
+      .select('valor_total')
+      .in('status', ['fechado', 'producao'])
     const totalBruto = pedidos?.reduce((acc, curr) => acc + curr.valor_total, 0) || 0
 
     const { data: pagos } = await supabase.from('parcelas').select('valor').eq('status', 'pago')
@@ -222,7 +225,7 @@ export default function FinanceiroPage() {
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <PaymentButton parcelaId={p.id} onSuccess={fetchData} />
-                                            <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
+                                            <Link href={`/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
                                                 <ChevronRight className="h-4 w-4" />
                                             </Link>
                                         </div>
@@ -265,7 +268,7 @@ export default function FinanceiroPage() {
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <PaymentButton parcelaId={p.id} onSuccess={fetchData} />
-                                            <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
+                                            <Link href={`/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
                                                 <ChevronRight className="h-4 w-4" />
                                             </Link>
                                         </div>

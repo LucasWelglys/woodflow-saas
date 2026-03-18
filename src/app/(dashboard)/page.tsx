@@ -69,6 +69,7 @@ export default function DashboardPage() {
       const { data: ordersSum } = await supabase
         .from('pedidos')
         .select('valor_total')
+        .in('status', ['fechado', 'producao'])
 
       const totalBruto = ordersSum?.reduce((acc, curr) => acc + curr.valor_total, 0) || 0
       
