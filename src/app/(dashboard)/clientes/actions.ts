@@ -6,7 +6,14 @@ import { revalidatePath } from 'next/cache'
 export async function createCliente(data: {
     nome: string,
     email?: string,
-    telefone?: string
+    telefone?: string,
+    cpf?: string,
+    cep?: string,
+    logradouro?: string,
+    numero?: string,
+    bairro?: string,
+    cidade?: string,
+    uf?: string
 }) {
     const supabase = createClient()
 
@@ -24,6 +31,13 @@ export async function createCliente(data: {
             nome: data.nome,
             email: data.email || null,
             telefone: data.telefone || null,
+            cpf: data.cpf || null,
+            cep: data.cep || null,
+            logradouro: data.logradouro || null,
+            numero: data.numero || null,
+            bairro: data.bairro || null,
+            cidade: data.cidade || null,
+            uf: data.uf || null,
         })
         .select()
         .single()
