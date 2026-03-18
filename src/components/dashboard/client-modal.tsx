@@ -68,8 +68,14 @@ export function ClientModal({ cliente, onClose, onSuccess }: ClientModalProps) {
   useEffect(() => {
     const fetchAddress = async () => {
       const cleanCep = formData.cep.replace(/\D/g, '')
-      // Evitar busca se estiver editando e o CEP for o mesmo já carregado (opcional, mas bom)
+      
       if (cleanCep.length === 8) {
+        // Se estivermos editando, só buscamos se o CEP for diferente do CEP original do cliente
+        // para evitar sobrescrever dados já salvos logo ao abrir o modal
+        if (cliente && cliente.cep && cleanCep === cliente.cep.replace(/\D/g, '')) {
+          return
+        }
+
         try {
           const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
           const data = await response.json()
@@ -89,8 +95,12 @@ export function ClientModal({ cliente, onClose, onSuccess }: ClientModalProps) {
       }
     }
 
-    fetchAddress()
-  }, [formData.cep])
+    const timer = setTimeout(() => {
+      fetchAddress()
+    }, 300) // Pequeno debounce para suavizar a experiência
+
+    return () => clearTimeout(timer)
+  }, [formData.cep, cliente])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
