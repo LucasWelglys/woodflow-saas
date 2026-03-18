@@ -14,6 +14,20 @@ import {
   ChevronRight
 } from 'lucide-react'
 import Link from 'next/link'
+import { PaymentButton } from '@/components/financeiro/payment-button'
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  Legend
+} from 'recharts'
 
 interface ParcelaDetalhe {
     id: string
@@ -101,6 +115,39 @@ export default function FinanceiroPage() {
     fetchData()
   }, [fetchData])
 
+  const [chartData, setChartData] = useState<any[]>([])
+  const [pieData, setPieData] = useState<any[]>([])
+
+  useEffect(() => {
+    const loadCharts = async () => {
+        const { data: monthlyData } = await supabase.from('v_dashboard_mensal').select('*')
+        
+        const monthsMap: Record<string, any> = {}
+        const modalityMap: Record<string, number> = {}
+        const COLORS = ['#EF6C00', '#2D241E', '#8D6E63', '#5D4037', '#2E7D32']
+
+        monthlyData?.forEach(item => {
+            const key = `${item.ano}-${item.mes}`
+            if (!monthsMap[key]) {
+                monthsMap[key] = { 
+                    name: new Date(item.ano, item.mes - 1).toLocaleString('pt-BR', { month: 'short' }),
+                    real: 0,
+                    pendente: 0 
+                }
+            }
+            monthsMap[key].real += Number(item.total_recebido)
+            monthsMap[key].pendente += Number(item.total_a_receber)
+            modalityMap[item.modalidade] = (modalityMap[item.modalidade] || 0) + Number(item.total_recebido)
+        })
+
+        setChartData(Object.values(monthsMap).slice(-6))
+        setPieData(Object.entries(modalityMap)
+            .filter(([_, v]) => v > 0)
+            .map(([name, value], i) => ({ name: name.toUpperCase(), value, fill: COLORS[i % COLORS.length] })))
+    }
+    loadCharts()
+  }, [supabase])
+
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
 
   return (
@@ -173,9 +220,12 @@ export default function FinanceiroPage() {
                                         <div className="text-[10px] text-stone-400 font-bold uppercase">{p.modalidade}</div>
                                     </td>
                                     <td className="px-8 py-4 text-right">
-                                        <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
-                                            <ChevronRight className="h-4 w-4" />
-                                        </Link>
+                                        <div className="flex justify-end gap-2">
+                                            <PaymentButton parcelaId={p.id} />
+                                            <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -213,9 +263,12 @@ export default function FinanceiroPage() {
                                         <div className="text-[10px] text-stone-400 font-bold uppercase">{p.modalidade}</div>
                                     </td>
                                     <td className="px-8 py-4 text-right">
-                                        <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
-                                            <ChevronRight className="h-4 w-4" />
-                                        </Link>
+                                        <div className="flex justify-end gap-2">
+                                            <PaymentButton parcelaId={p.id} />
+                                            <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -226,14 +279,35 @@ export default function FinanceiroPage() {
         </section>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 opacity-50">
-        <div className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm flex flex-col items-center justify-center space-y-4 min-h-[200px]">
-          <BarChart3 className="h-8 w-8 text-stone-200" />
-          <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px]">Fluxo Mensal (Fase 3.2)</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm min-h-[350px]">
+          <h3 className="text-xl font-bold text-wood-dark mb-6">Fluxo Mensal (Real vs Pendente)</h3>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" />
+                <Tooltip />
+                <Bar name="Recebido" dataKey="real" fill="#2E7D32" radius={[4, 4, 0, 0]} />
+                <Bar name="Pendente" dataKey="pendente" fill="#EF6C00" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm flex flex-col items-center justify-center space-y-4 min-h-[200px]">
-          <PieChartIcon className="h-8 w-8 text-stone-200" />
-          <p className="text-stone-400 font-bold uppercase tracking-widest text-[10px]">Modalidades (Fase 3.2)</p>
+        <div className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm min-h-[350px]">
+          <h3 className="text-xl font-bold text-wood-dark mb-6">Recebido por Modalidade</h3>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
