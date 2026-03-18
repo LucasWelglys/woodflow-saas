@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation'
 interface PaymentButtonProps {
   parcelaId: string
   className?: string
+  onSuccess?: () => void
 }
 
-export function PaymentButton({ parcelaId, className }: PaymentButtonProps) {
+export function PaymentButton({ parcelaId, className, onSuccess }: PaymentButtonProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -20,6 +21,9 @@ export function PaymentButton({ parcelaId, className }: PaymentButtonProps) {
     setLoading(true)
     try {
       await marcarComoPago(parcelaId)
+      if (onSuccess) {
+        onSuccess()
+      }
       router.refresh()
     } catch (error) {
       alert('Erro ao processar pagamento: ' + (error as Error).message)

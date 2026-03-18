@@ -10,7 +10,7 @@ export async function marcarComoPago(parcelaId: string) {
     .from('parcelas')
     .update({ 
       status: 'pago',
-      data_recebimento: new Date().toISOString()
+      data_recebimento: new Date().toISOString().split('T')[0]
     })
     .eq('id', parcelaId)
 

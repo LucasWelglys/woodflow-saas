@@ -221,7 +221,7 @@ export default function FinanceiroPage() {
                                     </td>
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <PaymentButton parcelaId={p.id} />
+                                            <PaymentButton parcelaId={p.id} onSuccess={fetchData} />
                                             <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
                                                 <ChevronRight className="h-4 w-4" />
                                             </Link>
@@ -264,7 +264,7 @@ export default function FinanceiroPage() {
                                     </td>
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <PaymentButton parcelaId={p.id} />
+                                            <PaymentButton parcelaId={p.id} onSuccess={fetchData} />
                                             <Link href={`/dashboard/pedidos/${p.pedido_id}`} className="inline-flex p-2 hover:bg-white rounded-lg border border-transparent hover:border-stone-200 transition-all text-stone-300 hover:text-wood-dark">
                                                 <ChevronRight className="h-4 w-4" />
                                             </Link>
