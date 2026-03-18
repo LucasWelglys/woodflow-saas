@@ -64,14 +64,17 @@ export default function SettingsPage() {
             // Carregar configurações financeiras
             const finResponse = await getFinanceSettings()
             if (finResponse.success && finResponse.data) {
+                // Converte ponto para vírgula para exibição (PT-BR)
+                const formatForDisplay = (val: number) => String(val || 0).replace('.', ',')
+
                 const fin = {
-                    taxa_debito: String(finResponse.data.taxa_debito || 0),
-                    taxa_credito_vista: String(finResponse.data.taxa_credito_vista || 0),
-                    taxa_credito_2_5: String(finResponse.data.taxa_credito_2_5 || 0),
-                    taxa_credito_6_10: String(finResponse.data.taxa_credito_6_10 || 0),
-                    taxa_credito_11_12: String(finResponse.data.taxa_credito_11_12 || 0),
-                    taxa_transacao_fixa: String(finResponse.data.taxa_transacao_fixa || 0),
-                    taxa_antecipacao: String(finResponse.data.taxa_antecipacao || 0)
+                    taxa_debito: formatForDisplay(finResponse.data.taxa_debito),
+                    taxa_credito_vista: formatForDisplay(finResponse.data.taxa_credito_vista),
+                    taxa_credito_2_5: formatForDisplay(finResponse.data.taxa_credito_2_5),
+                    taxa_credito_6_10: formatForDisplay(finResponse.data.taxa_credito_6_10),
+                    taxa_credito_11_12: formatForDisplay(finResponse.data.taxa_credito_11_12),
+                    taxa_transacao_fixa: formatForDisplay(finResponse.data.taxa_transacao_fixa),
+                    taxa_antecipacao: formatForDisplay(finResponse.data.taxa_antecipacao)
                 }
                 setFinanceData(fin)
                 setOriginalFinance(fin)
@@ -84,9 +87,16 @@ export default function SettingsPage() {
         loadSettings()
     }, [loadSettings])
 
-    const handlePercentChange = (field: string, value: string) => {
-        // Permite apenas números e um ponto decimal
-        const cleanValue = value.replace(/[^\d.]/g, '')
+    const handleValueChange = (field: string, value: string) => {
+        // Permite apenas números e UMA vírgula
+        let cleanValue = value.replace(/[^\d,]/g, '')
+        
+        // Garante que haja apenas uma vírgula
+        const parts = cleanValue.split(',')
+        if (parts.length > 2) {
+            cleanValue = parts[0] + ',' + parts.slice(1).join('')
+        }
+        
         setFinanceData(prev => ({ ...prev, [field]: cleanValue }))
     }
 
@@ -105,14 +115,17 @@ export default function SettingsPage() {
             // Salvar Configurações Financeiras
             let resultFinance = { success: true }
             if (marcenariaId) {
+                // Converte vírgula para ponto antes de salvar no banco (numeric)
+                const parseBRValue = (val: string) => parseFloat(val.replace(',', '.')) || 0
+
                 const numericFinance = {
-                    taxa_debito: parseFloat(financeData.taxa_debito) || 0,
-                    taxa_credito_vista: parseFloat(financeData.taxa_credito_vista) || 0,
-                    taxa_credito_2_5: parseFloat(financeData.taxa_credito_2_5) || 0,
-                    taxa_credito_6_10: parseFloat(financeData.taxa_credito_6_10) || 0,
-                    taxa_credito_11_12: parseFloat(financeData.taxa_credito_11_12) || 0,
-                    taxa_transacao_fixa: parseFloat(financeData.taxa_transacao_fixa) || 0,
-                    taxa_antecipacao: parseFloat(financeData.taxa_antecipacao) || 0
+                    taxa_debito: parseBRValue(financeData.taxa_debito),
+                    taxa_credito_vista: parseBRValue(financeData.taxa_credito_vista),
+                    taxa_credito_2_5: parseBRValue(financeData.taxa_credito_2_5),
+                    taxa_credito_6_10: parseBRValue(financeData.taxa_credito_6_10),
+                    taxa_credito_11_12: parseBRValue(financeData.taxa_credito_11_12),
+                    taxa_transacao_fixa: parseBRValue(financeData.taxa_transacao_fixa),
+                    taxa_antecipacao: parseBRValue(financeData.taxa_antecipacao)
                 }
                 resultFinance = await updateFinanceSettings(marcenariaId, numericFinance)
             }
@@ -210,8 +223,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_debito}
-                                            onChange={e => handlePercentChange('taxa_debito', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_debito', e.target.value)}
                                             className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
+                                            placeholder="0,00"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs shadow-sm">%</span>
                                     </div>
@@ -222,8 +236,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_credito_vista}
-                                            onChange={e => handlePercentChange('taxa_credito_vista', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_credito_vista', e.target.value)}
                                             className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
+                                            placeholder="0,00"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
                                     </div>
@@ -234,8 +249,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_credito_2_5}
-                                            onChange={e => handlePercentChange('taxa_credito_2_5', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_credito_2_5', e.target.value)}
                                             className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
+                                            placeholder="0,00"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
                                     </div>
@@ -246,8 +262,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_credito_6_10}
-                                            onChange={e => handlePercentChange('taxa_credito_6_10', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_credito_6_10', e.target.value)}
                                             className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
+                                            placeholder="0,00"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
                                     </div>
@@ -258,8 +275,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_credito_11_12}
-                                            onChange={e => handlePercentChange('taxa_credito_11_12', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_credito_11_12', e.target.value)}
                                             className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
+                                            placeholder="0,00"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
                                     </div>
@@ -284,8 +302,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_transacao_fixa}
-                                            onChange={e => handlePercentChange('taxa_transacao_fixa', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_transacao_fixa', e.target.value)}
                                             className="w-full pl-8 pr-3 py-2 rounded-lg border border-stone-200 bg-white text-sm font-black text-stone-700 outline-none focus:ring-2 focus:ring-wood-light text-right transition-all"
+                                            placeholder="0,00"
                                         />
                                     </div>
                                 </div>
@@ -298,8 +317,9 @@ export default function SettingsPage() {
                                         <input 
                                             type="text" 
                                             value={financeData.taxa_antecipacao}
-                                            onChange={e => handlePercentChange('taxa_antecipacao', e.target.value)}
+                                            onChange={e => handleValueChange('taxa_antecipacao', e.target.value)}
                                             className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-200 bg-white text-sm font-black text-stone-700 outline-none focus:ring-2 focus:ring-wood-light text-right transition-all"
+                                            placeholder="0,00"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
                                     </div>
