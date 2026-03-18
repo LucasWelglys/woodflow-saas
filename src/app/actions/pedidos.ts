@@ -38,32 +38,22 @@ export async function deletePedido(pedidoId: string) {
 
   if (checkError) {
     console.error('Erro ao verificar parcelas:', checkError)
-    throw new Error('Erro ao validar situação financeira do pedido.')
+    throw new Error('Erro ao validar situação financeira do pedido: ' + checkError.message)
   }
 
   if (paidParcelas && paidParcelas.length > 0) {
     throw new Error('Não é possível excluir: este pedido já possui pagamentos registrados no financeiro.')
   }
 
-  // Como não pudemos garantir o ON DELETE CASCADE via SQL, deletamos as parcelas manualmente primeiro
-  const { error: parcelasError } = await supabase
-    .from('parcelas')
-    .delete()
-    .eq('pedido_id', pedidoId)
+  // Chamar RPC para deletar o pedido e suas dependências (parcelas e custos) em uma transação no banco
+  const { error: rpcError } = await supabase.rpc('delete_pedido_v2', {
+    pedido_id_param: pedidoId
+  })
 
-  if (parcelasError) {
-    console.error('Erro ao deletar parcelas do pedido:', parcelasError)
-    throw new Error('Não foi possível excluir as parcelas relacionadas.')
-  }
-
-  const { error: pedidoError } = await supabase
-    .from('pedidos')
-    .delete()
-    .eq('id', pedidoId)
-
-  if (pedidoError) {
-    console.error('Erro ao deletar pedido:', pedidoError)
-    throw new Error(pedidoError.message)
+  if (rpcError) {
+    console.error('Erro ao deletar pedido via RPC:', rpcError)
+    // Retornamos o erro exato do Supabase/Postgres conforme solicitado
+    throw new Error(`Falha na exclusão: ${rpcError.message} (${rpcError.code})`)
   }
 
   revalidatePath('/dashboard')
