@@ -18,10 +18,12 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
   const [clientes, setClientes] = useState<Cliente[]>([])
 
   const [descricao, setDescricao] = useState('')
+  const [valorTotalStr, setValorTotalStr] = useState('')
   const [valorTotal, setValorTotal] = useState<number>(0)
   
   const [parcelas, setParcelas] = useState<{
     numero: number
+    valorStr: string
     valor: number
     dataVencimento: string
     modalidade: string
@@ -37,10 +39,31 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
     fetchClientes()
   }, [supabase])
 
+  const formatCurrency = (value: string) => {
+    const nums = value.replace(/\D/g, '')
+    const amount = parseFloat(nums) / 100
+    if (isNaN(amount)) return ''
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount)
+  }
+
+  const parseCurrency = (formattedValue: string) => {
+    return parseFloat(formattedValue.replace(/\./g, '').replace(',', '.')) || 0
+  }
+
+  function handleValorTotalChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const formatted = formatCurrency(e.target.value)
+    setValorTotalStr(formatted)
+    setValorTotal(parseCurrency(formatted))
+  }
+
   function generateInstallments() {
     if (valorTotal <= 0 || parcelas.length > 0) return
     setParcelas([{
       numero: 1,
+      valorStr: formatCurrency((valorTotal * 100).toString()),
       valor: valorTotal,
       dataVencimento: new Date().toISOString().split('T')[0],
       modalidade: 'dinheiro'
@@ -130,10 +153,10 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 font-bold text-sm">R$</span>
                 <input 
-                  type="number" 
-                  step="0.01"
-                  value={valorTotal}
-                  onChange={e => setValorTotal(Number(e.target.value))}
+                  type="text" 
+                  placeholder="0,00"
+                  value={valorTotalStr}
+                  onChange={handleValorTotalChange}
                   onBlur={generateInstallments}
                   className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm font-bold text-wood-dark"
                 />
@@ -154,9 +177,9 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
           <div className="pt-4 border-t border-stone-100">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-sm font-bold text-wood-dark">Plano de Pagamento</h4>
-              <button 
+                <button 
                 type="button"
-                onClick={() => setParcelas([...parcelas, { numero: parcelas.length + 1, valor: 0, dataVencimento: '', modalidade: 'dinheiro' }])}
+                onClick={() => setParcelas([...parcelas, { numero: parcelas.length + 1, valorStr: '', valor: 0, dataVencimento: '', modalidade: 'dinheiro' }])}
                 className="text-xs font-bold text-wood-mid hover:underline"
               >
                 + Adicionar Parcela
@@ -167,16 +190,22 @@ export function NewOrderForm({ onClose, onSuccess }: NewOrderFormProps) {
               {parcelas.map((p, idx) => (
                 <div key={idx} className="flex gap-3 items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
                   <span className="text-xs font-bold text-stone-400 w-8">{p.numero}º</span>
-                  <input 
-                    type="number" 
-                    value={p.valor}
-                    onChange={e => {
-                      const newP = [...parcelas]
-                      newP[idx].valor = Number(e.target.value)
-                      setParcelas(newP)
-                    }}
-                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-bold" 
-                  />
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] font-bold">R$</span>
+                    <input 
+                      type="text" 
+                      placeholder="0,00"
+                      value={p.valorStr}
+                      onChange={e => {
+                        const formatted = formatCurrency(e.target.value)
+                        const newP = [...parcelas]
+                        newP[idx].valorStr = formatted
+                        newP[idx].valor = parseCurrency(formatted)
+                        setParcelas(newP)
+                      }}
+                      className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold" 
+                    />
+                  </div>
                   <input 
                     type="date" 
                     value={p.dataVencimento}
