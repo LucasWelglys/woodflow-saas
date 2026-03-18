@@ -29,6 +29,22 @@ export async function converterParaContrato(pedidoId: string) {
 export async function deletePedido(pedidoId: string) {
   const supabase = createClient()
   
+  // Verificação de segurança: Não permitir excluir se houver parcelas pagas
+  const { data: paidParcelas, error: checkError } = await supabase
+    .from('parcelas')
+    .select('id')
+    .eq('pedido_id', pedidoId)
+    .eq('status', 'pago')
+
+  if (checkError) {
+    console.error('Erro ao verificar parcelas:', checkError)
+    throw new Error('Erro ao validar situação financeira do pedido.')
+  }
+
+  if (paidParcelas && paidParcelas.length > 0) {
+    throw new Error('Não é possível excluir: este pedido já possui pagamentos registrados no financeiro.')
+  }
+
   // Como não pudemos garantir o ON DELETE CASCADE via SQL, deletamos as parcelas manualmente primeiro
   const { error: parcelasError } = await supabase
     .from('parcelas')

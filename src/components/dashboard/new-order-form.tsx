@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { X, Save } from 'lucide-react'
 import { Cliente, Order } from '@/types/dashboard'
@@ -32,6 +32,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
   }[]>([])
 
   const supabase = createClient()
+  const isSubmitting = useRef(false)
 
   // Formata o valor total inicial se estiver editando
   useEffect(() => {
@@ -109,12 +110,16 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isSubmitting.current) return
+    
+    isSubmitting.current = true
     setLoading(true)
     setError(null)
 
     if (!clienteId) {
       setError('Selecione um cliente')
       setLoading(false)
+      isSubmitting.current = false
       return
     }
 
@@ -166,7 +171,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido')
-    } finally {
+      isSubmitting.current = false
       setLoading(false)
     }
   }

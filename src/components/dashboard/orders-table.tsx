@@ -16,6 +16,7 @@ export function OrdersTable({ orders, loading }: OrdersTableProps) {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   if (loading) {
     return (
@@ -48,11 +49,12 @@ export function OrdersTable({ orders, loading }: OrdersTableProps) {
   async function handleDelete() {
     if (!deletingId) return
     setIsDeleting(true)
+    setDeleteError(null)
     try {
       await deletePedido(deletingId)
       setDeletingId(null)
     } catch (err) {
-      alert('Erro ao excluir pedido: ' + (err instanceof Error ? err.message : 'Erro desconhecido'))
+      setDeleteError(err instanceof Error ? err.message : 'Erro ao excluir pedido')
     } finally {
       setIsDeleting(false)
     }
@@ -141,9 +143,14 @@ export function OrdersTable({ orders, loading }: OrdersTableProps) {
               <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
             <h3 className="text-xl font-black text-stone-800 mb-2">Excluir Pedido?</h3>
-            <p className="text-stone-500 text-sm mb-8">
+            <p className="text-stone-500 text-sm mb-6">
               Esta ação é irreversível. Todas as parcelas vinculadas a este pedido serão removidas do financeiro.
             </p>
+            {deleteError && (
+              <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold animate-shake">
+                {deleteError}
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setDeletingId(null)}
