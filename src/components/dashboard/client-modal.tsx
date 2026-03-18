@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { X, Save, User, Phone, Mail, MapPin, Hash, IdCard, Building, Map } from 'lucide-react'
-import { createCliente } from '@/app/(dashboard)/clientes/actions'
+import { createCliente, updateCliente } from '@/app/(dashboard)/clientes/actions'
+import { Cliente } from '@/types/dashboard'
 
-interface NewClientModalProps {
+interface ClientModalProps {
+  cliente?: Cliente | null
   onClose: () => void
   onSuccess: () => void
 }
 
-export function NewClientModal({ onClose, onSuccess }: NewClientModalProps) {
+export function ClientModal({ cliente, onClose, onSuccess }: ClientModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -23,6 +25,24 @@ export function NewClientModal({ onClose, onSuccess }: NewClientModalProps) {
     cidade: '',
     uf: ''
   })
+
+  // Preencher dados se for edição
+  useEffect(() => {
+    if (cliente) {
+      setFormData({
+        nome: cliente.nome || '',
+        email: cliente.email || '',
+        telefone: cliente.telefone || '',
+        cpf: cliente.cpf || '',
+        cep: cliente.cep || '',
+        logradouro: cliente.logradouro || '',
+        numero: cliente.numero || '',
+        bairro: cliente.bairro || '',
+        cidade: cliente.cidade || '',
+        uf: cliente.uf || ''
+      })
+    }
+  }, [cliente])
 
   // Máscara para CPF: 000.000.000-00
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +68,7 @@ export function NewClientModal({ onClose, onSuccess }: NewClientModalProps) {
   useEffect(() => {
     const fetchAddress = async () => {
       const cleanCep = formData.cep.replace(/\D/g, '')
+      // Evitar busca se estiver editando e o CEP for o mesmo já carregado (opcional, mas bom)
       if (cleanCep.length === 8) {
         try {
           const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
@@ -83,7 +104,9 @@ export function NewClientModal({ onClose, onSuccess }: NewClientModalProps) {
     }
 
     try {
-      const result = await createCliente(formData)
+      const result = cliente 
+        ? await updateCliente(cliente.id, formData)
+        : await createCliente(formData)
       
       if (result.success) {
         onSuccess()
@@ -102,8 +125,12 @@ export function NewClientModal({ onClose, onSuccess }: NewClientModalProps) {
       <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-stone-100">
         <div className="px-8 py-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
           <div>
-            <h3 className="text-xl font-extrabold text-wood-dark tracking-tight">Novo Cliente</h3>
-            <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-0.5">Cadastro de Base</p>
+            <h3 className="text-xl font-extrabold text-wood-dark tracking-tight">
+              {cliente ? 'Editar Cliente' : 'Novo Cliente'}
+            </h3>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-0.5">
+              {cliente ? 'Atualização de Cadastro' : 'Cadastro de Base'}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
             <X className="h-5 w-5 text-stone-400" />
@@ -290,7 +317,7 @@ export function NewClientModal({ onClose, onSuccess }: NewClientModalProps) {
               disabled={loading}
               className="bg-wood-dark text-white px-12 py-4 rounded-2xl font-black text-sm hover:bg-black transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
             >
-              {loading ? 'Processando...' : <><Save className="h-5 w-5" /> Finalizar Cadastro</>}
+              {loading ? 'Processando...' : <><Save className="h-5 w-5" /> {cliente ? 'Salvar Alterações' : 'Finalizar Cadastro'}</>}
             </button>
           </div>
         </form>
