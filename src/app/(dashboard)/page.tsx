@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
+import { getFinanceiroStats } from '@/lib/financeiro'
 import { SummaryCard } from '@/components/dashboard/summary-card'
 import { OrdersTable } from '@/components/dashboard/orders-table'
 import { NewOrderForm } from '@/components/dashboard/new-order-form'
@@ -79,25 +80,11 @@ export default function DashboardPage() {
         .select('*')
         .eq('marcenaria_id', marcenaria.id)
 
-      const { data: allParcelas } = await supabase
-        .from('parcelas')
-        .select('valor, valor_liquido, status, data_vencimento')
-        .eq('marcenaria_id', marcenaria.id)
-
-      const totalRecebido = allParcelas
-        ?.filter(p => p.status === 'pago')
-        .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
-
-      const totalAReceber = allParcelas
-        ?.filter(p => p.status === 'pendente')
-        .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
-
-      const today = new Date().toISOString().split('T')[0]
-      const totalVencido = allParcelas
-        ?.filter(p => p.status === 'pendente' && p.data_vencimento < today)
-        .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
-
-      const totalBruto = totalRecebido + totalAReceber
+      const stats = await getFinanceiroStats(supabase, marcenaria.id)
+      const totalRecebido = stats.recebido
+      const totalAReceber = stats.aReceber
+      const totalVencido = stats.vencido
+      const totalBruto = stats.bruto
 
       // 3. Prepare Chart Data (Fluxo Mensal)
       const monthsMap: Record<string, any> = {}
@@ -227,7 +214,7 @@ export default function DashboardPage() {
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" tickFormatter={(v) => `R$${v/1000}k`} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" tickFormatter={(v: number) => `R$${v/1000}k`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   formatter={(value: number) => [fmt(value), '']}

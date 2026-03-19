@@ -47,3 +47,28 @@ export async function recalculateFinanceiro() {
   
   return { success: true, count }
 }
+
+export async function marcarComoPago(parcelaId: string) {
+  const supabase = createClient()
+  const marcenaria = await getMarcenariaContext()
+  
+  if (!marcenaria) {
+    throw new Error('Marcenaria não encontrada ou usuário não autenticado')
+  }
+
+  const { error } = await supabase
+    .from('parcelas')
+    .update({ status: 'pago', updated_at: new Date().toISOString() })
+    .eq('id', parcelaId)
+    .eq('marcenaria_id', marcenaria.id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/financeiro')
+  revalidatePath('/dashboard')
+  revalidatePath('/pedidos')
+
+  return { success: true }
+}

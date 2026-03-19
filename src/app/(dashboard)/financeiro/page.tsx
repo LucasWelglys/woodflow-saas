@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { getFinanceiroStats } from '@/lib/financeiro'
 import { SummaryCard } from '@/components/dashboard/summary-card'
 import { 
   TrendingUp, 
@@ -35,6 +36,7 @@ interface ParcelaDetalhe {
     id: string
     numero_parcela: number
     valor: number
+    valor_liquido?: number
     data_vencimento: string
     modalidade: string
     status: string
@@ -79,38 +81,13 @@ export default function FinanceiroPage() {
     if (!marcenaria) return
 
     // 1. Fetch Metrics
-    const { data: pedidos } = await supabase
-      .from('pedidos')
-      .select('valor_total')
-      .eq('marcenaria_id', marcenaria.id)
-      .in('status', ['fechado', 'producao'])
-    const totalBruto = pedidos?.reduce((acc, curr) => acc + curr.valor_total, 0) || 0
-
-    const { data: pagos } = await supabase
-        .from('parcelas')
-        .select('valor')
-        .eq('marcenaria_id', marcenaria.id)
-        .eq('status', 'pago')
-    const totalRecebido = pagos?.reduce((acc, curr) => acc + curr.valor, 0) || 0
-
-    const { data: pendentes } = await supabase
-        .from('parcelas')
-        .select('valor')
-        .eq('marcenaria_id', marcenaria.id)
-        .eq('status', 'pendente')
-    const totalAReceber = pendentes?.reduce((acc, curr) => acc + curr.valor, 0) || 0
-
-    const { data: vencidos } = await supabase
-        .from('v_boletos_vencidos')
-        .select('valor')
-        .eq('marcenaria_id', marcenaria.id)
-    const totalVencido = vencidos?.reduce((acc, curr) => acc + curr.valor, 0) || 0
+    const stats = await getFinanceiroStats(supabase, marcenaria.id)
 
     setMetrics({
-      bruto: totalBruto,
-      recebido: totalRecebido,
-      aReceber: totalAReceber,
-      vencido: totalVencido
+      bruto: stats.bruto,
+      recebido: stats.recebido,
+      aReceber: stats.aReceber,
+      vencido: stats.vencido
     })
 
     // 2. Fetch "Vencendo Hoje" (status pendente, vencimento hoje)
@@ -288,7 +265,7 @@ export default function FinanceiroPage() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-4 text-right">
-                                        <span className="text-sm font-black text-wood-dark">{fmt(p.valor)}</span>
+                                        <span className="text-sm font-black text-wood-dark">{fmt(p.valor_liquido || p.valor)}</span>
                                         <div className="text-[10px] text-stone-400 font-bold uppercase">{p.modalidade}</div>
                                     </td>
                                     <td className="px-8 py-4 text-right">
@@ -314,7 +291,7 @@ export default function FinanceiroPage() {
                     <Clock className="h-5 w-5 text-amber-500" />
                     <h3 className="font-bold text-wood-dark">Próximos 30 Dias</h3>
                 </div>
-                <span className="text-xs font-bold text-stone-400">TOTAL: {fmt(aReceber.reduce((acc, curr) => acc + curr.valor, 0))}</span>
+                <span className="text-xs font-bold text-stone-400">TOTAL: {fmt(aReceber.reduce((acc, curr) => acc + Number(curr.valor_liquido || curr.valor), 0))}</span>
             </div>
             <div className="p-0">
                 <table className="w-full text-left">
@@ -331,7 +308,7 @@ export default function FinanceiroPage() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-4 text-right">
-                                        <span className="text-sm font-black text-wood-dark">{fmt(p.valor)}</span>
+                                        <span className="text-sm font-black text-wood-dark">{fmt(p.valor_liquido || p.valor)}</span>
                                         <div className="text-[10px] text-stone-400 font-bold uppercase">{p.modalidade}</div>
                                     </td>
                                     <td className="px-8 py-4 text-right">
