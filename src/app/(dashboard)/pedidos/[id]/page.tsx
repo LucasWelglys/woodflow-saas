@@ -17,6 +17,7 @@ import {
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { converterParaContrato } from '@/app/actions/pedidos'
+import { adicionarGasto, removerGasto } from '@/app/actions/gastos'
 
 interface Custo {
   id: string
@@ -41,6 +42,7 @@ export default function DetalhePedidoPage() {
     descricao: '',
     valor: 0
   })
+  const [valorGastoStr, setValorGastoStr] = useState('')
 
   const supabase = createClient()
 
@@ -102,28 +104,47 @@ export default function DetalhePedidoPage() {
   async function addCusto() {
     if (!novoCusto.descricao || novoCusto.valor <= 0) return
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase
-      .from('custos_projeto')
-      .insert({
-        pedido_id: id,
-        marcenaria_id: user.id, // Forçado para garantir RLS
-        ...novoCusto,
-        data_custo: new Date().toISOString().split('T')[0]
+    setUpdating(true)
+    try {
+      await adicionarGasto({
+        pedido_id: id as string,
+        ...novoCusto
       })
-    
-    if (!error) {
       setShowAddCusto(false)
       setNovoCusto({ categoria: 'material', descricao: '', valor: 0 })
+      setValorGastoStr('')
       fetchData()
+    } catch (err) {
+      alert('Erro ao salvar custo')
+    } finally {
+      setUpdating(false)
     }
   }
 
   async function removeCusto(cId: string) {
-    const { error } = await supabase.from('custos_projeto').delete().eq('id', cId)
-    if (!error) fetchData()
+    if (!confirm('Tem certeza que deseja remover este custo?')) return
+
+    setUpdating(true)
+    try {
+      await removerGasto(cId)
+      fetchData()
+    } catch (err) {
+      alert('Erro ao excluir custo')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '')
+    const val = Number(raw) / 100
+    setNovoCusto({ ...novoCusto, valor: val })
+    
+    if (raw === '') {
+      setValorGastoStr('')
+    } else {
+      setValorGastoStr(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val))
+    }
   }
 
   async function handleConverterParaContrato() {
@@ -267,17 +288,17 @@ export default function DetalhePedidoPage() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-stone-400 uppercase">Valor</label>
                       <input 
-                        type="number"
-                        placeholder="0,00"
-                        value={novoCusto.valor}
-                        onChange={e => setNovoCusto({...novoCusto, valor: Number(e.target.value)})}
+                        type="text"
+                        placeholder="R$ 0,00"
+                        value={valorGastoStr}
+                        onChange={handleValorChange}
                         className="w-full bg-white border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold"
                       />
                     </div>
                   </div>
                   <div className="flex justify-end gap-3">
                     <button onClick={() => setShowAddCusto(false)} className="text-xs font-bold text-stone-400 hover:text-stone-600 px-4">Cancelar</button>
-                    <button onClick={addCusto} className="bg-wood-dark text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-black transition-all">Salvar Gasto</button>
+                    <button onClick={addCusto} disabled={updating} className="bg-wood-dark text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-black transition-all disabled:opacity-50">Salvar Gasto</button>
                   </div>
                 </div>
               )}
