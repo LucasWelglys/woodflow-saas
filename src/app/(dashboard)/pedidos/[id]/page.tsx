@@ -142,8 +142,9 @@ export default function DetalhePedidoPage() {
   }
 
   const totalCustos = custos.reduce((acc, curr) => acc + curr.valor, 0)
+  const totalLiquido = parcelas.reduce((acc, curr) => acc + (curr.valor_liquido || curr.valor), 0)
   const valorPedido = order?.valor_total || 0
-  const lucroReal = valorPedido - totalCustos
+  const lucroReal = totalLiquido - totalCustos
   const margem = valorPedido > 0 ? (lucroReal / valorPedido) * 100 : 0
 
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
@@ -186,6 +187,7 @@ export default function DetalhePedidoPage() {
                     <th className="px-8 py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Vencimento</th>
                     <th className="px-8 py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Modalidade</th>
                     <th className="px-8 py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest text-right">Valor</th>
+                    <th className="px-8 py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest text-right">Líquido</th>
                     <th className="px-8 py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest text-center">Status</th>
                   </tr>
                 </thead>
@@ -196,6 +198,7 @@ export default function DetalhePedidoPage() {
                       <td className="px-8 py-4 text-xs font-medium text-wood-dark">{new Date(p.data_vencimento).toLocaleDateString('pt-BR')}</td>
                       <td className="px-8 py-4 text-xs font-bold text-stone-500 uppercase tracking-tighter">{p.modalidade}</td>
                       <td className="px-8 py-4 text-xs font-black text-wood-dark text-right">{fmt(p.valor)}</td>
+                      <td className="px-8 py-4 text-xs font-black text-emerald-600 text-right">{fmt(p.valor_liquido || p.valor)}</td>
                       <td className="px-8 py-4">
                         <div className="flex justify-center">
                           <button 

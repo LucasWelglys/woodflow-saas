@@ -18,6 +18,7 @@ export interface Parcel {
   marcenaria_id: string
   numero_parcela: number
   valor: number
+  valor_liquido?: number
   data_vencimento: string
   modalidade: string
   status: string

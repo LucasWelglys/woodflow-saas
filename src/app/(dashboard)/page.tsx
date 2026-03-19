@@ -79,19 +79,13 @@ export default function DashboardPage() {
         .select('*')
         .eq('marcenaria_id', marcenaria.id)
 
-      const { data: ordersSum } = await supabase
-        .from('pedidos')
-        .select('valor_total')
-        .eq('marcenaria_id', marcenaria.id)
-        .in('status', ['fechado', 'producao'])
-
-      const totalBruto = ordersSum?.reduce((acc, curr) => acc + curr.valor_total, 0) || 0
-      
       const summaryTotals = monthlyData?.reduce((acc, curr) => ({
         recebido: acc.recebido + Number(curr.total_recebido),
         aReceber: acc.aReceber + Number(curr.total_a_receber),
         vencido: acc.vencido + Number(curr.total_vencido)
       }), { recebido: 0, aReceber: 0, vencido: 0 }) || { recebido: 0, aReceber: 0, vencido: 0 }
+
+      const totalBruto = summaryTotals.recebido + summaryTotals.aReceber
 
       // 3. Prepare Chart Data (Fluxo Mensal)
       const monthsMap: Record<string, any> = {}
@@ -179,9 +173,9 @@ export default function DashboardPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard 
-          title="💰 FATURAMENTO BRUTO" 
+          title="💰 FATURAMENTO" 
           value={fmt(data.summary.bruto)} 
-          subtitle="Total em contratos" 
+          subtitle="Valor Líquido Projetado" 
           icon={TrendingUp}
           loading={loading}
         />
