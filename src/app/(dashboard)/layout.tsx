@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Hammer, LayoutDashboard, Users, User, LogOut, Package, TrendingUp, Settings } from 'lucide-react'
+import { Hammer, LayoutDashboard, Users, User, LogOut, Package, TrendingUp, Settings, Activity } from 'lucide-react'
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { getMarcenariaContext } from '@/lib/marcenaria'
@@ -57,6 +57,13 @@ export default async function DashboardLayout({
           >
             <TrendingUp className="h-5 w-5" />
             <span className="font-medium">Financeiro</span>
+          </Link>
+          <Link
+            href="/despesas"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
+          >
+            <Activity className="h-5 w-5" />
+            <span className="font-medium">Despesas</span>
           </Link>
           <Link
             href="/configuracoes"

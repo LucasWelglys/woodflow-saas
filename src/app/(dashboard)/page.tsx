@@ -12,7 +12,9 @@ import {
   Wallet, 
   TrendingUp, 
   Clock, 
-  AlertCircle 
+  AlertCircle,
+  PiggyBank,
+  Activity
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -33,12 +35,16 @@ export default function DashboardPage() {
   const [showNewOrder, setShowNewOrder] = useState(false)
   const [chartData, setChartData] = useState<any[]>([])
   const [pieData, setPieData] = useState<any[]>([])
-  const [data, setData] = useState<DashboardData>({
+  const [data, setData] = useState<any>({
     summary: {
       bruto: 0,
       recebido: 0,
       aReceber: 0,
-      vencido: 0
+      vencido: 0,
+      despesas: 0,
+      saldoReal: 0,
+      saldoProjetado: 0,
+      custos: 0
     },
     orders: []
   })
@@ -122,10 +128,14 @@ export default function DashboardPage() {
       setPieData(formattedPieData)
       setData({
         summary: {
-          bruto: totalBruto,
-          recebido: totalRecebido,
-          aReceber: totalAReceber,
-          vencido: totalVencido
+          bruto: stats.bruto,
+          recebido: stats.recebido,
+          aReceber: stats.aReceber,
+          vencido: stats.vencido,
+          despesas: stats.despesas,
+          saldoReal: stats.saldoReal,
+          saldoProjetado: stats.saldoProjetado,
+          custos: stats.custos
         },
         orders: ordersTyped
       })
@@ -169,12 +179,30 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Super Card Saldo Real */}
+      <div className="bg-wood-dark text-white p-8 rounded-[2rem] shadow-2xl shadow-wood-dark/20 relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+        <div className="relative z-10 text-center md:text-left">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-wood-light flex items-center justify-center md:justify-start gap-2 mb-2">
+            <PiggyBank className="h-4 w-4" /> Saldo Real Operacional
+          </h3>
+          <p className="text-4xl md:text-5xl font-black tracking-tight">{fmt(data.summary.saldoReal)}</p>
+          <p className="text-xs font-bold text-stone-400 mt-2 opacity-80 uppercase tracking-widest">Líquido Recebido - Custos e Despesas</p>
+        </div>
+        <div className="relative z-10 bg-white/10 px-8 py-6 rounded-2xl flex items-center gap-3 shadow-inner self-stretch md:self-auto border border-white/5">
+          <div className="text-center md:text-right w-full">
+            <span className="block text-[10px] uppercase font-bold text-stone-300 tracking-widest mb-1">Saldo Projetado</span>
+            <span className="block text-2xl font-black tracking-tighter text-emerald-400">{fmt(data.summary.saldoProjetado)}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <SummaryCard 
           title="💰 FATURAMENTO" 
           value={fmt(data.summary.bruto)} 
-          subtitle="Valor Líquido Projetado" 
+          subtitle="Valor Bruto Total" 
           icon={TrendingUp}
           loading={loading}
         />
@@ -195,6 +223,14 @@ export default function DashboardPage() {
           loading={loading}
         />
         <SummaryCard 
+          title="📉 DESPESAS" 
+          value={fmt(data.summary.despesas)} 
+          subtitle="Fixas e Variáveis" 
+          icon={Activity}
+          variant="error"
+          loading={loading}
+        />
+        <SummaryCard 
           title="⚠️ VENCIDO" 
           value={fmt(data.summary.vencido)} 
           subtitle="Cobranças em atraso" 
@@ -206,7 +242,6 @@ export default function DashboardPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Flux Chart */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-stone-100">
           <h3 className="text-xl font-bold text-wood-dark mb-6">Fluxo Mensal (Real vs Pendente)</h3>
           <div className="h-[350px] w-full">
@@ -227,28 +262,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Modalidade Chart */}
         <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-stone-100">
-          <h3 className="text-xl font-bold text-wood-dark mb-6">Recebido por Modalidade</h3>
+          <h3 className="text-xl font-bold text-wood-dark mb-6">Saúde Financeira</h3>
           <div className="h-[350px] w-full flex flex-col justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
-                  paddingAngle={8}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => fmt(value)} />
-                <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-              </PieChart>
+              <BarChart data={[
+                {
+                  name: 'Saúde Real',
+                  Entradas: data.summary.recebido,
+                  Saídas: data.summary.custos + data.summary.despesas
+                }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} stroke="#6B7280" tickFormatter={(v: number) => `R$${v/1000}k`} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  formatter={(value: number) => [fmt(value), '']}
+                />
+                <Legend iconType="circle" />
+                <Bar name="Entradas Reais" dataKey="Entradas" fill="#2E7D32" radius={[6, 6, 0, 0]} />
+                <Bar name="Saídas (Despesas + Custos)" dataKey="Saídas" fill="#D32F2F" radius={[6, 6, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

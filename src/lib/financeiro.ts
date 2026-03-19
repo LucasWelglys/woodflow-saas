@@ -26,10 +26,32 @@ export async function getFinanceiroStats(supabase: SupabaseClient, marcenariaId:
   // O "Faturamento" (Bruto) é a soma do que já foi Recebido + o que falta Receber
   const totalBruto = totalRecebido + totalAReceber
 
+  // Busca Custos de Projetos
+  const { data: custos } = await supabase
+    .from('custos_projeto')
+    .select('valor')
+    .eq('marcenaria_id', marcenariaId)
+  const totalCustos = custos?.reduce((sum, c) => sum + Number(c.valor), 0) || 0
+
+  // Busca Despesas
+  const { data: despesas } = await supabase
+    .from('despesas')
+    .select('valor')
+    .eq('marcenaria_id', marcenariaId)
+  const totalDespesas = despesas?.reduce((sum, d) => sum + Number(d.valor), 0) || 0
+
+  // Saldos
+  const saldoReal = totalRecebido - totalCustos - totalDespesas
+  const saldoProjetado = totalBruto - totalCustos - totalDespesas
+
   return {
     bruto: totalBruto,
     recebido: totalRecebido,
     aReceber: totalAReceber,
-    vencido: totalVencido
+    vencido: totalVencido,
+    custos: totalCustos,
+    despesas: totalDespesas,
+    saldoReal,
+    saldoProjetado
   }
 }
