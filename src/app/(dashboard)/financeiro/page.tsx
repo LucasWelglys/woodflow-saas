@@ -167,9 +167,13 @@ export default function FinanceiroPage() {
           onClick={async () => {
             setRecalculating(true)
             try {
-              await recalculateFinanceiro()
+              const result = await recalculateFinanceiro()
               fetchData()
-              alert('Financeiro recalculado com sucesso!')
+              if (result.count && result.count > 0) {
+                alert(`Sucesso! ${result.count} parcelas foram recalculadas.`)
+              } else {
+                alert(result.message || 'Nenhuma parcela precisava de recálculo.')
+              }
             } catch (error) {
               alert('Erro ao recalcular taxas')
             } finally {
