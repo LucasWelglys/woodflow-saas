@@ -1,6 +1,7 @@
+import { createClient } from '@/lib/supabase-server'
 import { getMarcenariaContext } from '@/lib/marcenaria'
 import { PaymentButton } from '@/components/financeiro/payment-button'
-import { AlertCircle, ChevronLeft, Phone } from 'lucide-center'
+import { AlertCircle, ChevronLeft, Phone } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
