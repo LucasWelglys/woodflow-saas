@@ -79,13 +79,25 @@ export default function DashboardPage() {
         .select('*')
         .eq('marcenaria_id', marcenaria.id)
 
-      const summaryTotals = monthlyData?.reduce((acc, curr) => ({
-        recebido: acc.recebido + Number(curr.total_recebido),
-        aReceber: acc.aReceber + Number(curr.total_a_receber),
-        vencido: acc.vencido + Number(curr.total_vencido)
-      }), { recebido: 0, aReceber: 0, vencido: 0 }) || { recebido: 0, aReceber: 0, vencido: 0 }
+      const { data: allParcelas } = await supabase
+        .from('parcelas')
+        .select('valor, valor_liquido, status, data_vencimento')
+        .eq('marcenaria_id', marcenaria.id)
 
-      const totalBruto = summaryTotals.recebido + summaryTotals.aReceber
+      const totalRecebido = allParcelas
+        ?.filter(p => p.status === 'pago')
+        .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
+
+      const totalAReceber = allParcelas
+        ?.filter(p => p.status === 'pendente')
+        .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
+
+      const today = new Date().toISOString().split('T')[0]
+      const totalVencido = allParcelas
+        ?.filter(p => p.status === 'pendente' && p.data_vencimento < today)
+        .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
+
+      const totalBruto = totalRecebido + totalAReceber
 
       // 3. Prepare Chart Data (Fluxo Mensal)
       const monthsMap: Record<string, any> = {}
@@ -124,9 +136,9 @@ export default function DashboardPage() {
       setData({
         summary: {
           bruto: totalBruto,
-          recebido: summaryTotals.recebido,
-          aReceber: summaryTotals.aReceber,
-          vencido: summaryTotals.vencido
+          recebido: totalRecebido,
+          aReceber: totalAReceber,
+          vencido: totalVencido
         },
         orders: ordersTyped
       })
