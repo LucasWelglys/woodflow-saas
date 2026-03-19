@@ -225,9 +225,16 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
               {editingOrder ? `Pedido #${editingOrder.numero}` : 'Fase de Orçamento'}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
-            <X className="h-5 w-5 text-stone-400" />
-          </button>
+          <div className="flex items-center gap-4">
+            {editingOrder?.status === 'contrato' && (
+              <span className="bg-red-50 text-red-600 border border-red-100 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                CONTRATO BLOQUEADO
+              </span>
+            )}
+            <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full transition-colors">
+              <X className="h-5 w-5 text-stone-400" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
@@ -239,7 +246,8 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
               <select 
                 value={clienteId} 
                 onChange={e => setClienteId(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm font-medium"
+                disabled={editingOrder?.status === 'contrato'}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm font-medium disabled:opacity-60"
               >
                 <option value="">Selecione um cliente</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -255,7 +263,8 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                   value={valorTotalStr}
                   onChange={handleValorTotalChange}
                   onBlur={generateInstallments}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm font-bold text-wood-dark"
+                  disabled={editingOrder?.status === 'contrato'}
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm font-bold text-wood-dark disabled:opacity-60"
                 />
               </div>
               {valorTotal > 0 && (
@@ -274,21 +283,24 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
             <textarea 
               value={descricao}
               onChange={e => setDescricao(e.target.value)}
+              disabled={editingOrder?.status === 'contrato'}
               placeholder="Ex: Cozinha Planejada em MDF Carvalho"
-              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm min-h-[100px]"
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm min-h-[100px] disabled:opacity-60"
             />
           </div>
 
           <div className="pt-4 border-t border-stone-100">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-sm font-bold text-wood-dark">Plano de Pagamento</h4>
+              {editingOrder?.status !== 'contrato' && (
                 <button 
-                type="button"
-                onClick={() => setParcelas([...parcelas, { numero: parcelas.length + 1, valorStr: '', valor: 0, dataVencimento: '', modalidade: 'dinheiro' }])}
-                className="text-xs font-bold text-wood-mid hover:underline"
-              >
-                + Adicionar Parcela
-              </button>
+                  type="button"
+                  onClick={() => setParcelas([...parcelas, { numero: parcelas.length + 1, valorStr: '', valor: 0, dataVencimento: '', modalidade: 'dinheiro' }])}
+                  className="text-xs font-bold text-wood-mid hover:underline"
+                >
+                  + Adicionar Parcela
+                </button>
+              )}
             </div>
             
             <div className="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
@@ -301,6 +313,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                       type="text" 
                       placeholder="0,00"
                       value={p.valorStr}
+                      disabled={editingOrder?.status === 'contrato'}
                       onChange={e => {
                         const formatted = formatCurrency(e.target.value)
                         const newP = [...parcelas]
@@ -308,7 +321,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                         newP[idx].valor = parseCurrency(formatted)
                         setParcelas(newP)
                       }}
-                      className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold text-stone-600" 
+                      className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold text-stone-600 disabled:opacity-60" 
                     />
                   </div>
                   <div className="flex flex-col items-end w-24 px-2">
@@ -318,21 +331,23 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                   <input 
                     type="date" 
                     value={p.dataVencimento}
+                    disabled={editingOrder?.status === 'contrato'}
                     onChange={e => {
                       const newP = [...parcelas]
                       newP[idx].dataVencimento = e.target.value
                       setParcelas(newP)
                     }}
-                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs" 
+                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs disabled:opacity-60" 
                   />
                   <select 
                     value={p.modalidade}
+                    disabled={editingOrder?.status === 'contrato'}
                     onChange={e => {
                       const newP = [...parcelas]
                       newP[idx].modalidade = e.target.value
                       setParcelas(newP)
                     }}
-                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs"
+                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs disabled:opacity-60"
                   >
                     <option value="dinheiro">Dinheiro</option>
                     <option value="pix">PIX</option>
@@ -352,13 +367,15 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="flex-2 bg-wood-dark text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {loading ? 'Salvando...' : <><Save className="h-4 w-4" /> Salvar Pedido</>}
-            </button>
+            {editingOrder?.status !== 'contrato' && (
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="flex-2 bg-wood-dark text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {loading ? 'Salvando...' : <><Save className="h-4 w-4" /> Salvar Pedido</>}
+              </button>
+            )}
           </div>
         </form>
       </div>

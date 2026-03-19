@@ -12,7 +12,9 @@ import {
   AlertCircle,
   Plus,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  FileText,
+  MessageSquare
 } from 'lucide-react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -173,6 +175,10 @@ export default function DetalhePedidoPage() {
   if (loading) return <div className="p-8 animate-pulse text-stone-400 font-bold uppercase tracking-widest text-xs">Carregando detalhes...</div>
   if (!order) return <div className="p-8 text-red-500 font-bold">Pedido não encontrado.</div>
 
+  const telefoneLimpo = (order as any).clientes?.telefone?.replace(/\D/g, '') || ''
+  const wppText = `Olá ${(order as any).clientes?.nome || ''}, as informações do seu orçamento/pedido #${order.numero.toString().padStart(3, '0')} da marcenaria já estão prontas!`
+  const wppLink = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(wppText)}`
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20">
       <div className="flex items-center gap-4">
@@ -249,12 +255,14 @@ export default function DetalhePedidoPage() {
                 <Package className="h-5 w-5 text-wood-mid" />
                 <h3 className="font-bold text-wood-dark">Custos de Produção</h3>
               </div>
-              <button 
-                onClick={() => setShowAddCusto(true)}
-                className="text-xs font-bold text-wood-mid hover:text-wood-dark transition-colors flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" /> Lançar Gasto
-              </button>
+              {order.status !== 'contrato' && (
+                <button 
+                  onClick={() => setShowAddCusto(true)}
+                  className="text-xs font-bold text-wood-mid hover:text-wood-dark transition-colors flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" /> Lançar Gasto
+                </button>
+              )}
             </div>
             
             <div className="p-8 space-y-4">
@@ -320,12 +328,14 @@ export default function DetalhePedidoPage() {
                       </div>
                       <div className="flex items-center gap-6">
                         <span className="text-sm font-black text-red-600">-{fmt(c.valor)}</span>
-                        <button 
-                          onClick={() => removeCusto(c.id)}
-                          className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-lg text-stone-300 hover:text-red-500 transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {order.status !== 'contrato' && (
+                          <button 
+                            onClick={() => removeCusto(c.id)}
+                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-50 rounded-lg text-stone-300 hover:text-red-500 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -381,12 +391,21 @@ export default function DetalhePedidoPage() {
                   {updating ? 'CONVERTENDO...' : 'CONVERTER EM CONTRATO'}
                 </button>
               )}
-              <button disabled className="w-full py-3 bg-stone-50 text-stone-400 border border-stone-100 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
-                 Gerar Contrato PDF (Em breve)
-              </button>
-              <button disabled className="w-full py-3 bg-stone-50 text-stone-400 border border-stone-100 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
-                 Enviar no WhatsApp (Em breve)
-              </button>
+              <Link
+                href={`/pdf/${order.id}`}
+                target="_blank"
+                className="w-full py-3 bg-stone-50 hover:bg-white text-wood-dark border border-stone-200 hover:border-wood-mid hover:shadow-md rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all"
+              >
+                 <FileText className="h-4 w-4" /> Gerar Contrato PDF
+              </Link>
+              <a 
+                href={wppLink}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-3 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white border border-[#25D366]/20 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                 <MessageSquare className="h-4 w-4" /> Enviar no WhatsApp
+              </a>
             </div>
           </section>
         </div>
