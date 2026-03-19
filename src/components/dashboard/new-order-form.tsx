@@ -43,7 +43,22 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
 
   useEffect(() => {
     async function fetchClientes() {
-      const { data } = await supabase.from('clientes').select('id, nome')
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: marcenaria } = await supabase
+        .from('marcenarias')
+        .select('id')
+        .eq('dono_id', user.id)
+        .single()
+
+      if (!marcenaria) return
+
+      const { data } = await supabase
+        .from('clientes')
+        .select('id, nome')
+        .eq('marcenaria_id', marcenaria.id)
+      
       if (data) setClientes(data)
     }
     fetchClientes()
@@ -127,6 +142,14 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
+      const { data: marcenaria } = await supabase
+        .from('marcenarias')
+        .select('id')
+        .eq('dono_id', user.id)
+        .single()
+
+      if (!marcenaria) throw new Error('Marcenaria não encontrada')
+
       const parcelasToSave = parcelas.map(p => ({
         numero_parcela: p.numero,
         valor: p.valor,
@@ -146,7 +169,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
         const { data: order, error: orderErr } = await supabase
           .from('pedidos')
           .insert({
-            marcenaria_id: user.id,
+            marcenaria_id: marcenaria.id,
             cliente_id: clienteId,
             descricao,
             valor_total: valorTotal,
@@ -161,7 +184,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
           parcelasToSave.map(p => ({
             ...p,
             pedido_id: order.id,
-            marcenaria_id: user.id,
+            marcenaria_id: marcenaria.id,
             status: 'pendente'
           }))
         )

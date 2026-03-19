@@ -34,9 +34,22 @@ export default function PedidosPage() {
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: marcenaria } = await supabase
+        .from('marcenarias')
+        .select('id')
+        .eq('dono_id', user.id)
+        .single()
+
+    if (!marcenaria) return
+
     let query = supabase
       .from('pedidos')
       .select('*, clientes(nome)')
+      .eq('marcenaria_id', marcenaria.id)
       .order('created_at', { ascending: false })
 
     if (statusFilter !== 'all') {

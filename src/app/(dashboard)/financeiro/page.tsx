@@ -66,20 +66,44 @@ export default function FinanceiroPage() {
     setLoading(true)
     const today = new Date().toISOString().split('T')[0]
 
-    // 1. Fetch Metrics (already correct but ensuring efficiency)
+    // 0. Get Marcenaria Context
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: marcenaria } = await supabase
+        .from('marcenarias')
+        .select('id')
+        .eq('dono_id', user.id)
+        .single()
+
+    if (!marcenaria) return
+
+    // 1. Fetch Metrics
     const { data: pedidos } = await supabase
       .from('pedidos')
       .select('valor_total')
+      .eq('marcenaria_id', marcenaria.id)
       .in('status', ['fechado', 'producao'])
     const totalBruto = pedidos?.reduce((acc, curr) => acc + curr.valor_total, 0) || 0
 
-    const { data: pagos } = await supabase.from('parcelas').select('valor').eq('status', 'pago')
+    const { data: pagos } = await supabase
+        .from('parcelas')
+        .select('valor')
+        .eq('marcenaria_id', marcenaria.id)
+        .eq('status', 'pago')
     const totalRecebido = pagos?.reduce((acc, curr) => acc + curr.valor, 0) || 0
 
-    const { data: pendentes } = await supabase.from('parcelas').select('valor').eq('status', 'pendente')
+    const { data: pendentes } = await supabase
+        .from('parcelas')
+        .select('valor')
+        .eq('marcenaria_id', marcenaria.id)
+        .eq('status', 'pendente')
     const totalAReceber = pendentes?.reduce((acc, curr) => acc + curr.valor, 0) || 0
 
-    const { data: vencidos } = await supabase.from('v_boletos_vencidos').select('valor')
+    const { data: vencidos } = await supabase
+        .from('v_boletos_vencidos')
+        .select('valor')
+        .eq('marcenaria_id', marcenaria.id)
     const totalVencido = vencidos?.reduce((acc, curr) => acc + curr.valor, 0) || 0
 
     setMetrics({
@@ -93,6 +117,7 @@ export default function FinanceiroPage() {
     const { data: hojeData } = await supabase
         .from('parcelas')
         .select('*, pedidos(descricao, clientes(nome))')
+        .eq('marcenaria_id', marcenaria.id)
         .eq('status', 'pendente')
         .eq('data_vencimento', today)
         .order('valor', { ascending: false })
@@ -107,6 +132,7 @@ export default function FinanceiroPage() {
     const { data: aReceberData } = await supabase
         .from('parcelas')
         .select('*, pedidos(descricao, clientes(nome))')
+        .eq('marcenaria_id', marcenaria.id)
         .eq('status', 'pendente')
         .gt('data_vencimento', today)
         .lte('data_vencimento', next30Str)
@@ -126,7 +152,21 @@ export default function FinanceiroPage() {
 
   useEffect(() => {
     const loadCharts = async () => {
-        const { data: monthlyData } = await supabase.from('v_dashboard_mensal').select('*')
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: marcenaria } = await supabase
+            .from('marcenarias')
+            .select('id')
+            .eq('dono_id', user.id)
+            .single()
+
+        if (!marcenaria) return
+
+        const { data: monthlyData } = await supabase
+            .from('v_dashboard_mensal')
+            .select('*')
+            .eq('marcenaria_id', marcenaria.id)
         
         const monthsMap: Record<string, any> = {}
         const modalityMap: Record<string, number> = {}

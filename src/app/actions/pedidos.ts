@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { getMarcenariaContext } from '@/lib/marcenaria'
 
 export async function converterParaContrato(pedidoId: string) {
   const supabase = createClient()
@@ -86,15 +87,15 @@ export async function updatePedido(pedidoId: string, data: any, parcelasData: an
   await supabase.from('parcelas').delete().eq('pedido_id', pedidoId)
 
   // Insere as novas
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Usuário não autenticado')
+  const marcenaria = await getMarcenariaContext()
+  if (!marcenaria) throw new Error('Marcenaria não encontrada ou usuário não autenticado')
 
   const { error: insertError } = await supabase
     .from('parcelas')
     .insert(parcelasData.map(p => ({
       ...p,
       pedido_id: pedidoId,
-      marcenaria_id: user.id,
+      marcenaria_id: marcenaria.id,
       status: 'pendente'
     })))
 

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Hammer, LayoutDashboard, Users, User, LogOut, Package, TrendingUp, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import { getMarcenariaContext } from '@/lib/marcenaria'
 
 export default async function DashboardLayout({
   children,
@@ -9,9 +10,9 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const marcenaria = await getMarcenariaContext()
 
-  if (!user) {
+  if (!marcenaria) {
     redirect('/login')
   }
 
@@ -69,7 +70,10 @@ export default async function DashboardLayout({
         <div className="p-4 border-t border-white/5 space-y-1">
           <div className="flex items-center gap-3 px-4 py-3 text-stone-400">
             <User className="h-5 w-5" />
-            <span className="text-xs truncate font-medium">{user.email}</span>
+            <div className="flex flex-col overflow-hidden">
+                <span className="text-sm truncate font-bold text-white">{marcenaria.nome}</span>
+                <span className="text-[10px] truncate text-stone-500 font-medium">{marcenaria.email_contato}</span>
+            </div>
           </div>
           {/* AQUI ESTÁ A CORREÇÃO DO BOTÃO SAIR */}
           <form action="/api/auth/signout" method="post">
@@ -90,7 +94,7 @@ export default async function DashboardLayout({
           <h1 className="text-stone-500 font-medium">Dashboard Geral</h1>
           <div className="flex items-center gap-4">
             <div className="h-8 w-8 rounded-full bg-wood-light flex items-center justify-center text-white text-xs font-bold uppercase">
-              {user.email?.charAt(0)}
+              {marcenaria.nome?.charAt(0)}
             </div>
           </div>
         </header>

@@ -1,14 +1,21 @@
-import { createClient } from '@/lib/supabase-server'
+import { getMarcenariaContext } from '@/lib/marcenaria'
 import { PaymentButton } from '@/components/financeiro/payment-button'
-import { AlertCircle, ChevronLeft, Phone } from 'lucide-react'
+import { AlertCircle, ChevronLeft, Phone } from 'lucide-center'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 export default async function VencidosPage() {
   const supabase = createClient()
+  const marcenaria = await getMarcenariaContext()
   
+  if (!marcenaria) {
+    redirect('/login')
+  }
+
   const { data: vencidos, error } = await supabase
     .from('v_boletos_vencidos')
     .select('*')
+    .eq('marcenaria_id', marcenaria.id)
     .order('dias_atraso', { ascending: false })
 
   const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)

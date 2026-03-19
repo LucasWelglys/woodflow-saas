@@ -48,10 +48,23 @@ export default function DashboardPage() {
     setLoading(true)
     
     try {
+      // 0. Get Marcenaria Context
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: marcenaria } = await supabase
+        .from('marcenarias')
+        .select('id')
+        .eq('dono_id', user.id)
+        .single()
+
+      if (!marcenaria) return
+
       // 1. Fetch recent orders
       const { data: ordersRaw } = await supabase
         .from('pedidos')
         .select('*, clientes(nome)')
+        .eq('marcenaria_id', marcenaria.id)
         .order('created_at', { ascending: false })
         .limit(5)
 
@@ -61,14 +74,15 @@ export default function DashboardPage() {
       }))
 
       // 2. Fetch Aggregated Data from Views
-      // Summary Metrics (Bruto, Recebido, A Receber, Vencido)
       const { data: monthlyData } = await supabase
         .from('v_dashboard_mensal')
         .select('*')
+        .eq('marcenaria_id', marcenaria.id)
 
       const { data: ordersSum } = await supabase
         .from('pedidos')
         .select('valor_total')
+        .eq('marcenaria_id', marcenaria.id)
         .in('status', ['fechado', 'producao'])
 
       const totalBruto = ordersSum?.reduce((acc, curr) => acc + curr.valor_total, 0) || 0

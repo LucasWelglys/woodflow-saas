@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { getMarcenariaContext } from '@/lib/marcenaria'
 
 export async function createCliente(data: {
     nome: string,
@@ -17,17 +18,15 @@ export async function createCliente(data: {
 }) {
     const supabase = createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        return { success: false, error: 'Usuário não autenticado' }
+    const marcenaria = await getMarcenariaContext()
+    if (!marcenaria) {
+        return { success: false, error: 'Marcenaria não encontrada ou usuário não autenticado' }
     }
 
-    // Conforme instrução do usuário: usar marcenaria_id: user.id diretamente
     const { data: cliente, error } = await supabase
         .from('clientes')
         .insert({
-            marcenaria_id: user.id,
+            marcenaria_id: marcenaria.id,
             nome: data.nome,
             email: data.email || null,
             telefone: data.telefone || null,
@@ -65,10 +64,9 @@ export async function updateCliente(id: string, data: {
 }) {
     const supabase = createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        return { success: false, error: 'Usuário não autenticado' }
+    const marcenaria = await getMarcenariaContext()
+    if (!marcenaria) {
+        return { success: false, error: 'Marcenaria não encontrada ou usuário não autenticado' }
     }
 
     const { data: cliente, error } = await supabase
@@ -87,7 +85,7 @@ export async function updateCliente(id: string, data: {
             updated_at: new Date().toISOString()
         })
         .eq('id', id)
-        .eq('marcenaria_id', user.id)
+        .eq('marcenaria_id', marcenaria.id)
         .select()
         .single()
 
@@ -103,10 +101,9 @@ export async function updateCliente(id: string, data: {
 export async function deleteCliente(id: string) {
     const supabase = createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        return { success: false, error: 'Usuário não autenticado' }
+    const marcenaria = await getMarcenariaContext()
+    if (!marcenaria) {
+        return { success: false, error: 'Marcenaria não encontrada ou usuário não autenticado' }
     }
 
     // Verificar se existem pedidos vinculados
@@ -128,7 +125,7 @@ export async function deleteCliente(id: string) {
         .from('clientes')
         .delete()
         .eq('id', id)
-        .eq('marcenaria_id', user.id)
+        .eq('marcenaria_id', marcenaria.id)
 
     if (error) {
         console.error('Erro ao excluir cliente:', error)

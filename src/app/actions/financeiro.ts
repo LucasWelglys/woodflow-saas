@@ -2,18 +2,19 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { getMarcenariaContext } from '@/lib/marcenaria'
 
 export async function recalculateFinanceiro() {
   const supabase = createClient()
   
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    throw new Error('Usuário não autenticado')
+  const marcenaria = await getMarcenariaContext()
+  if (!marcenaria) {
+    throw new Error('Marcenaria não encontrada ou usuário não autenticado')
   }
 
   // Tenta rodar via RPC primeiro
   const { data: rpcCount, error: rpcError } = await supabase.rpc('recalculate_financeiro_v1', {
-    p_marcenaria_id: user.id
+    p_marcenaria_id: marcenaria.id
   })
 
   let count = rpcCount || 0
@@ -25,7 +26,7 @@ export async function recalculateFinanceiro() {
     const { error: updateError, data } = await supabase
       .from('parcelas')
       .update({ updated_at: new Date().toISOString() })
-      .eq('marcenaria_id', user.id)
+      .eq('marcenaria_id', marcenaria.id)
       .select('id')
 
     if (updateError) {
