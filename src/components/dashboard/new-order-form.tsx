@@ -16,13 +16,12 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  const [taxRate, setTaxRate] = useState(0)
   const [clienteId, setClienteId] = useState(editingOrder?.cliente_id || '')
   const [clientes, setClientes] = useState<Cliente[]>([])
-
   const [descricao, setDescricao] = useState(editingOrder?.descricao || '')
   const [valorTotalStr, setValorTotalStr] = useState('')
   const [valorTotal, setValorTotal] = useState<number>(editingOrder?.valor_total || 0)
-  
   const [parcelas, setParcelas] = useState<{
     numero: number
     valorStr: string
@@ -42,26 +41,28 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
   }, [editingOrder])
 
   useEffect(() => {
-    async function fetchClientes() {
+    async function fetchMarcenariaData() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
       const { data: marcenaria } = await supabase
         .from('marcenarias')
-        .select('id')
+        .select('id, taxa_cartao')
         .eq('dono_id', user.id)
         .single()
 
       if (!marcenaria) return
 
-      const { data } = await supabase
+      setTaxRate(marcenaria.taxa_cartao || 0)
+
+      const { data: clientesData } = await supabase
         .from('clientes')
         .select('id, nome')
         .eq('marcenaria_id', marcenaria.id)
       
-      if (data) setClientes(data)
+      if (clientesData) setClientes(clientesData)
     }
-    fetchClientes()
+    fetchMarcenariaData()
   }, [supabase])
 
   // Busca parcelas se estiver editando
@@ -100,6 +101,10 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
 
   const parseCurrency = (formattedValue: string) => {
     return parseFloat(formattedValue.replace(/\./g, '').replace(',', '.')) || 0
+  }
+
+  const formatBRL = (v: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
   }
 
   function handleValorTotalChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -244,6 +249,14 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                   className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-wood-mid transition-all text-sm font-bold text-wood-dark"
                 />
               </div>
+              {valorTotal > 0 && (
+                <div className="flex items-center gap-1.5 px-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tight">
+                    Líquido estimado: <span className="text-stone-800 ml-1">{formatBRL(valorTotal * (1 - taxRate / 100))}</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -286,8 +299,12 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                         newP[idx].valor = parseCurrency(formatted)
                         setParcelas(newP)
                       }}
-                      className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold" 
+                      className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold text-stone-600" 
                     />
+                  </div>
+                  <div className="flex flex-col items-end w-24 px-2">
+                    <span className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter">Líquido</span>
+                    <span className="text-[10px] font-black text-emerald-600">{formatBRL(p.valor * (1 - taxRate / 100))}</span>
                   </div>
                   <input 
                     type="date" 
