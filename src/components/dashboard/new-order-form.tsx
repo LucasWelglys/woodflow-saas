@@ -45,15 +45,24 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: marcenaria } = await supabase
+      const { data: marcenaria, error: marcenariaErr } = await supabase
         .from('marcenarias')
-        .select('id, taxa_cartao')
+        .select('id')
         .eq('dono_id', user.id)
         .single()
 
-      if (!marcenaria) return
+      if (marcenariaErr || !marcenaria) {
+        console.error('Erro ao buscar marcenaria:', marcenariaErr)
+        return
+      }
 
-      setTaxRate(marcenaria.taxa_cartao || 0)
+      const { data: config } = await supabase
+        .from('configuracoes_financeiras')
+        .select('taxa_credito_vista')
+        .eq('marcenaria_id', marcenaria.id)
+        .maybeSingle()
+
+      setTaxRate(config?.taxa_credito_vista || 0)
 
       const { data: clientesData } = await supabase
         .from('clientes')
