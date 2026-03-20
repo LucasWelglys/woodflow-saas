@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getMarcenariaContext } from '@/lib/marcenaria'
-
+import { logAction } from '@/lib/audit'
 export async function recalculateFinanceiro() {
   const supabase = createClient()
   
@@ -65,6 +65,8 @@ export async function marcarComoPago(parcelaId: string) {
   if (error) {
     throw new Error(error.message)
   }
+
+  await logAction(supabase, marcenaria.id, 'parcelas', 'UPDATE', parcelaId, { status: 'pago' })
 
   revalidatePath('/financeiro')
   revalidatePath('/dashboard')

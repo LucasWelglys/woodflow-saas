@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { X, Save } from 'lucide-react'
 import { Cliente, Order } from '@/types/dashboard'
 import { updatePedido } from '@/app/actions/pedidos'
+import { logAction } from '@/lib/audit'
 
 interface NewOrderFormProps {
   onClose: () => void
@@ -141,6 +142,14 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
     e.preventDefault()
     if (isSubmitting.current) return
     
+    const somaParcelas = parcelas.reduce((acc, p) => acc + p.valor, 0)
+    const saldoAParcelar = valorTotal - somaParcelas
+
+    if (Math.abs(saldoAParcelar) > 0.01) {
+      setError(`Soma das parcelas inválida. Resta parcelar: ${formatBRL(saldoAParcelar)}`)
+      return
+    }
+
     isSubmitting.current = true
     setLoading(true)
     setError(null)
@@ -203,6 +212,14 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
           }))
         )
         if (parcErr) throw parcErr
+
+        await logAction(supabase, marcenaria.id, 'pedidos', 'INSERT', order.id, {
+          acao: 'criacao_pedido',
+          cliente_id: clienteId,
+          descricao,
+          valor_total: valorTotal,
+          parcelas_geradas: parcelasToSave.length
+        })
       }
 
       onSuccess()
@@ -212,6 +229,10 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
       setLoading(false)
     }
   }
+
+  const somaParcelas = parcelas.reduce((acc, p) => acc + p.valor, 0)
+  const saldoAParcelar = valorTotal - somaParcelas
+  const isSaldoZero = Math.abs(saldoAParcelar) < 0.01 && valorTotal > 0
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -291,7 +312,18 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
 
           <div className="pt-4 border-t border-stone-100">
             <div className="flex justify-between items-center mb-4">
-              <h4 className="text-sm font-bold text-wood-dark">Plano de Pagamento</h4>
+              <div className="flex items-center gap-4">
+                <h4 className="text-sm font-bold text-wood-dark">Plano de Pagamento</h4>
+                {valorTotal > 0 && (
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                    isSaldoZero 
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                      : 'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
+                  }`}>
+                    {isSaldoZero ? 'SALDO ZERADO' : `SALDO A PARCELAR: ${formatBRL(saldoAParcelar)}`}
+                  </span>
+                )}
+              </div>
               {editingOrder?.status !== 'contrato' && (
                 <button 
                   type="button"
@@ -370,8 +402,8 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
             {editingOrder?.status !== 'contrato' && (
               <button 
                 type="submit" 
-                disabled={loading}
-                className="flex-2 bg-wood-dark text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                disabled={loading || !isSaldoZero || parcelas.length === 0}
+                className="flex-2 bg-wood-dark text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Salvando...' : <><Save className="h-4 w-4" /> Salvar Pedido</>}
               </button>

@@ -3,7 +3,8 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getMarcenariaContext } from '@/lib/marcenaria'
-
+import { DespesaGlobalSchema } from '@/schemas/financeiro.schema'
+import { logAction } from '@/lib/audit'
 interface DespesaInput {
   descricao: string
   valor: number
@@ -19,20 +20,26 @@ export async function adicionarDespesa(data: DespesaInput) {
     throw new Error('Acesso negado')
   }
 
-  const { error } = await supabase
+  const parsedData = DespesaGlobalSchema.parse(data)
+
+  const { data: newDespesa, error } = await supabase
     .from('despesas')
     .insert({
       marcenaria_id: marcenaria.id,
-      descricao: data.descricao,
-      valor: data.valor,
-      categoria: data.categoria,
-      data_despesa: data.data_despesa || new Date().toISOString().split('T')[0]
+      descricao: parsedData.descricao,
+      valor: parsedData.valor,
+      categoria: parsedData.categoria,
+      data_despesa: parsedData.data_pagamento || new Date().toISOString().split('T')[0]
     })
+    .select()
+    .single()
 
   if (error) {
     console.error('Erro ao inserir despesa:', error)
     throw new Error('Falha ao inserir despesa')
   }
+
+  await logAction(supabase, marcenaria.id, 'despesas', 'INSERT', newDespesa.id, parsedData)
 
   revalidatePath('/despesas')
   revalidatePath('/financeiro')
@@ -58,6 +65,8 @@ export async function removerDespesa(id: string) {
     console.error('Erro ao remover despesa:', error)
     throw new Error('Falha ao excluir despesa')
   }
+
+  await logAction(supabase, marcenaria.id, 'despesas', 'DELETE', id, { removida: true })
 
   revalidatePath('/despesas')
   revalidatePath('/financeiro')

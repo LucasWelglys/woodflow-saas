@@ -3,7 +3,8 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getMarcenariaContext } from '@/lib/marcenaria'
-
+import { UpdatePedidoSchema, ParcelaSchema } from '@/schemas/pedidos.schema'
+import { logAction } from '@/lib/audit'
 export async function converterParaContrato(pedidoId: string) {
   const supabase = createClient()
   
@@ -18,6 +19,11 @@ export async function converterParaContrato(pedidoId: string) {
   if (error) {
     console.error('Erro ao converter pedido:', error)
     throw new Error(error.message)
+  }
+
+  const marcenaria = await getMarcenariaContext()
+  if (marcenaria) {
+    await logAction(supabase, marcenaria.id, 'pedidos', 'UPDATE', pedidoId, { acao: 'converter_para_contrato' })
   }
 
   revalidatePath('/dashboard')
@@ -57,6 +63,11 @@ export async function deletePedido(pedidoId: string) {
     throw new Error(`Falha na exclusão: ${rpcError.message} (${rpcError.code})`)
   }
 
+  const marcenaria = await getMarcenariaContext()
+  if (marcenaria) {
+    await logAction(supabase, marcenaria.id, 'pedidos', 'DELETE', pedidoId, { removido: true })
+  }
+
   revalidatePath('/dashboard')
   revalidatePath('/pedidos')
   revalidatePath('/financeiro')
@@ -67,13 +78,16 @@ export async function deletePedido(pedidoId: string) {
 export async function updatePedido(pedidoId: string, data: any, parcelasData: any[]) {
   const supabase = createClient()
   
+  const parsedData = UpdatePedidoSchema.parse(data)
+  const parsedParcelas = ParcelaSchema.array().parse(parcelasData)
+
   // 1. Atualiza o pedido
   const { error: updateError } = await supabase
     .from('pedidos')
     .update({
-      cliente_id: data.cliente_id,
-      descricao: data.descricao,
-      valor_total: data.valor_total
+      cliente_id: parsedData.cliente_id,
+      descricao: parsedData.descricao,
+      valor_total: parsedData.valor_total
     })
     .eq('id', pedidoId)
 
@@ -92,17 +106,19 @@ export async function updatePedido(pedidoId: string, data: any, parcelasData: an
 
   const { error: insertError } = await supabase
     .from('parcelas')
-    .insert(parcelasData.map(p => ({
+    .insert(parsedParcelas.map(p => ({
       ...p,
       pedido_id: pedidoId,
       marcenaria_id: marcenaria.id,
-      status: 'pendente'
+      status: p.status || 'pendente'
     })))
 
   if (insertError) {
     console.error('Erro ao recriar parcelas:', insertError)
     throw new Error('Pedido atualizado, mas erro ao gerar novas parcelas.')
   }
+
+  await logAction(supabase, marcenaria.id, 'pedidos', 'UPDATE', pedidoId, { acao: 'update_pedido_e_parcelas', dados: parsedData })
 
   revalidatePath('/dashboard')
   revalidatePath('/pedidos')
