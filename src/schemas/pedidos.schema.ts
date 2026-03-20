@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const ParcelaSchema = z.object({
+  numero_parcela: z.number().int().positive().optional(),
   valor: z.number().positive('Valor da parcela deve ser maior que zero'),
   data_vencimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de data inválido (YYYY-MM-DD)'),
   modalidade: z.enum(['dinheiro', 'pix', 'cheque', 'cartao_debito', 'cartao_credito', 'boleto']),

@@ -45,11 +45,12 @@ export async function createPedido(data: any, parcelasData: any[]) {
       throw new Error(`Falha no banco de dados ao criar pedido: ${orderErr.message}`)
     }
 
-    // 2. Insere parcelas
+    // 2. Insere parcelas em Bulk (Lote)
     const { error: insertError } = await supabase
       .from('parcelas')
-      .insert(parsedParcelas.map(p => ({
+      .insert(parsedParcelas.map((p, index) => ({
         ...p,
+        numero_parcela: p.numero_parcela || (index + 1),
         pedido_id: pedidoId,
         marcenaria_id: marcenaria.id,
         status: p.status || 'pendente'
@@ -165,11 +166,16 @@ export async function deletePedido(pedidoId: string) {
 }
 
 export async function updatePedido(pedidoId: string, data: any, parcelasData: any[]) {
+  let marcenariaId = ''
   try {
     const supabase = createClient()
     
     const parsedData = UpdatePedidoSchema.parse(data)
     const parsedParcelas = ParcelaSchema.array().parse(parcelasData)
+
+    const marcenaria = await getMarcenariaContext()
+    if (!marcenaria) return { success: false, error: 'Usuário não autenticado.' }
+    marcenariaId = marcenaria.id
 
     // 1. Atualiza o pedido
     const { error: updateError } = await supabase
@@ -186,16 +192,14 @@ export async function updatePedido(pedidoId: string, data: any, parcelasData: an
       return { success: false, error: `Falha no banco: ${updateError.message}` }
     }
 
-    // 2. Substitui as parcelas
+    // 2. Substitui as parcelas (Bulk Re-insert)
     await supabase.from('parcelas').delete().eq('pedido_id', pedidoId)
-
-    const marcenaria = await getMarcenariaContext()
-    if (!marcenaria) return { success: false, error: 'Usuário não autenticado.' }
 
     const { error: insertError } = await supabase
       .from('parcelas')
-      .insert(parsedParcelas.map(p => ({
+      .insert(parsedParcelas.map((p, index) => ({
         ...p,
+        numero_parcela: p.numero_parcela || (index + 1),
         pedido_id: pedidoId,
         marcenaria_id: marcenaria.id,
         status: p.status || 'pendente'
@@ -216,6 +220,19 @@ export async function updatePedido(pedidoId: string, data: any, parcelasData: an
     return { success: true }
   } catch (err: any) {
     console.error('[SERVER EXCEPTION] updatePedido:', err)
-    return { success: false, error: err.message || 'Erro crítico ao atualizar pedido.' }
+    let errorMessage = err.message || 'Erro crítico ao atualizar pedido.'
+    if (err.issues) {
+      errorMessage = err.issues.map((i: any) => i.message).join(' | ')
+    }
+
+    if (marcenariaId) {
+      await logAction(createClient(), marcenariaId, 'pedidos', 'UPDATE', pedidoId, {
+        acao: 'erro_atualizacao_pedido',
+        motivo: errorMessage,
+        payload: { data, parcelasData }
+      })
+    }
+
+    return { success: false, error: errorMessage }
   }
 }
