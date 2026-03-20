@@ -3,38 +3,19 @@
 import { Settings, User, Bell, Save, Percent, CreditCard, TrendingUp, DollarSign } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
-import { updateMarcenaria, getFinanceSettings, updateFinanceSettings } from './actions'
+import { updateMarcenaria } from './actions'
+import { MeiosRecebimentoManager } from '@/components/configuracoes/meios-recebimento-manager'
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-    // Dados salvos no banco (para o botão cancelar)
     const [originalData, setOriginalData] = useState({ nome: '', email: '', notificacoes: false })
-    const [originalFinance, setOriginalFinance] = useState({
-        taxa_debito: '0',
-        taxa_credito_vista: '0',
-        taxa_credito_2_5: '0',
-        taxa_credito_6_10: '0',
-        taxa_credito_11_12: '0',
-        taxa_transacao_fixa: '0',
-        taxa_antecipacao: '0'
-    })
 
-    // Dados editáveis no formulário
+    // Dados editáveis no formulário do Perfil e Sistema
     const [formData, setFormData] = useState({ nome: '', email: '' })
     const [notificacoes, setNotificacoes] = useState(false)
     const [marcenariaId, setMarcenariaId] = useState<string | null>(null)
-    
-    const [financeData, setFinanceData] = useState({
-        taxa_debito: '0',
-        taxa_credito_vista: '0',
-        taxa_credito_2_5: '0',
-        taxa_credito_6_10: '0',
-        taxa_credito_11_12: '0',
-        taxa_transacao_fixa: '0',
-        taxa_antecipacao: '0'
-    })
 
     const supabase = createClient()
 
@@ -60,25 +41,6 @@ export default function SettingsPage() {
             setFormData({ nome: loaded.nome, email: loaded.email })
             setNotificacoes(loaded.notificacoes)
             setOriginalData(loaded)
-
-            // Carregar configurações financeiras
-            const finResponse = await getFinanceSettings()
-            if (finResponse.success && finResponse.data) {
-                // Converte ponto para vírgula para exibição (PT-BR)
-                const formatForDisplay = (val: number) => String(val || 0).replace('.', ',')
-
-                const fin = {
-                    taxa_debito: formatForDisplay(finResponse.data.taxa_debito),
-                    taxa_credito_vista: formatForDisplay(finResponse.data.taxa_credito_vista),
-                    taxa_credito_2_5: formatForDisplay(finResponse.data.taxa_credito_2_5),
-                    taxa_credito_6_10: formatForDisplay(finResponse.data.taxa_credito_6_10),
-                    taxa_credito_11_12: formatForDisplay(finResponse.data.taxa_credito_11_12),
-                    taxa_transacao_fixa: formatForDisplay(finResponse.data.taxa_transacao_fixa),
-                    taxa_antecipacao: formatForDisplay(finResponse.data.taxa_antecipacao)
-                }
-                setFinanceData(fin)
-                setOriginalFinance(fin)
-            }
         }
         setLoading(false)
     }, [supabase])
@@ -87,18 +49,6 @@ export default function SettingsPage() {
         loadSettings()
     }, [loadSettings])
 
-    const handleValueChange = (field: string, value: string) => {
-        // Permite apenas números e UMA vírgula
-        let cleanValue = value.replace(/[^\d,]/g, '')
-        
-        // Garante que haja apenas uma vírgula
-        const parts = cleanValue.split(',')
-        if (parts.length > 2) {
-            cleanValue = parts[0] + ',' + parts.slice(1).join('')
-        }
-        
-        setFinanceData(prev => ({ ...prev, [field]: cleanValue }))
-    }
 
     async function handleSave() {
         setLoading(true)
@@ -112,30 +62,11 @@ export default function SettingsPage() {
                 notificacoes_pedidos: notificacoes
             })
 
-            // Salvar Configurações Financeiras
-            let resultFinance = { success: true }
-            if (marcenariaId) {
-                // Converte vírgula para ponto antes de salvar no banco (numeric)
-                const parseBRValue = (val: string) => parseFloat(val.replace(',', '.')) || 0
-
-                const numericFinance = {
-                    taxa_debito: parseBRValue(financeData.taxa_debito),
-                    taxa_credito_vista: parseBRValue(financeData.taxa_credito_vista),
-                    taxa_credito_2_5: parseBRValue(financeData.taxa_credito_2_5),
-                    taxa_credito_6_10: parseBRValue(financeData.taxa_credito_6_10),
-                    taxa_credito_11_12: parseBRValue(financeData.taxa_credito_11_12),
-                    taxa_transacao_fixa: parseBRValue(financeData.taxa_transacao_fixa),
-                    taxa_antecipacao: parseBRValue(financeData.taxa_antecipacao)
-                }
-                resultFinance = await updateFinanceSettings(marcenariaId, numericFinance)
-            }
-
-            if (resultGeral.success && resultFinance.success) {
-                setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
+            if (resultGeral.success) {
+                setMessage({ type: 'success', text: 'Configurações do perfil salvas com sucesso!' })
                 setOriginalData({ nome: formData.nome, email: formData.email, notificacoes })
-                setOriginalFinance({ ...financeData })
             } else {
-                setMessage({ type: 'error', text: 'Erro ao salvar algumas configurações.' })
+                setMessage({ type: 'error', text: 'Erro ao salvar configurações do perfil.' })
             }
         } catch (err) {
             setMessage({ type: 'error', text: 'Erro inesperado ao salvar.' })
@@ -147,7 +78,6 @@ export default function SettingsPage() {
     function handleCancelar() {
         setFormData({ nome: originalData.nome, email: originalData.email })
         setNotificacoes(originalData.notificacoes)
-        setFinanceData({ ...originalFinance })
         setMessage(null)
     }
 
@@ -200,132 +130,14 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* Seção Taxas e Operadoras */}
+                {/* Seção Taxas e Operadoras Componentizada */}
                 <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-                    <div className="p-6 border-b border-stone-100 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Percent className="h-5 w-5 text-wood-dark" />
-                            <h2 className="font-semibold text-stone-800">Taxas e Operadoras</h2>
-                        </div>
-                        <span className="text-[10px] font-bold text-wood-mid bg-wood-light/10 px-2 py-1 rounded">Cálculo Automático Ativo</span>
+                    <div className="p-6 border-b border-stone-100 flex items-center gap-3">
+                        <Percent className="h-5 w-5 text-wood-dark" />
+                        <h2 className="font-semibold text-stone-800">Meios de Recebimento e Taxas</h2>
                     </div>
-                    <div className="p-6 space-y-8">
-                        {/* Tabela de Juros */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-stone-400">
-                                <CreditCard className="h-4 w-4" />
-                                <h3 className="text-xs font-black uppercase tracking-widest">Tabela de Juros (Venda)</h3>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">Débito</label>
-                                    <div className="relative">
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_debito}
-                                            onChange={e => handleValueChange('taxa_debito', e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
-                                            placeholder="0,00"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs shadow-sm">%</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">1x Crédito</label>
-                                    <div className="relative">
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_credito_vista}
-                                            onChange={e => handleValueChange('taxa_credito_vista', e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
-                                            placeholder="0,00"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">2-5x</label>
-                                    <div className="relative">
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_credito_2_5}
-                                            onChange={e => handleValueChange('taxa_credito_2_5', e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
-                                            placeholder="0,00"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">6-10x</label>
-                                    <div className="relative">
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_credito_6_10}
-                                            onChange={e => handleValueChange('taxa_credito_6_10', e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
-                                            placeholder="0,00"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase">11-12x</label>
-                                    <div className="relative">
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_credito_11_12}
-                                            onChange={e => handleValueChange('taxa_credito_11_12', e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-100 bg-stone-50/50 text-sm font-bold text-stone-700 outline-none focus:ring-2 focus:ring-wood-light transition-all"
-                                            placeholder="0,00"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 text-xs">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Taxas Operacionais */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-stone-400">
-                                <TrendingUp className="h-4 w-4" />
-                                <h3 className="text-xs font-black uppercase tracking-widest">Taxas Operacionais</h3>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="bg-stone-50/80 p-4 rounded-2xl border border-stone-100 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-bold text-stone-700">Taxa por Transação</p>
-                                        <p className="text-[10px] text-stone-400 font-medium">Valor fixo cobrado por venda</p>
-                                    </div>
-                                    <div className="relative w-32">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] font-black">R$</span>
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_transacao_fixa}
-                                            onChange={e => handleValueChange('taxa_transacao_fixa', e.target.value)}
-                                            className="w-full pl-8 pr-3 py-2 rounded-lg border border-stone-200 bg-white text-sm font-black text-stone-700 outline-none focus:ring-2 focus:ring-wood-light text-right transition-all"
-                                            placeholder="0,00"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="bg-stone-50/80 p-4 rounded-2xl border border-stone-100 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-bold text-stone-700">Taxa de Antecipação</p>
-                                        <p className="text-[10px] text-stone-400 font-medium">Custo para recebimento imediato</p>
-                                    </div>
-                                    <div className="relative w-32">
-                                        <input 
-                                            type="text" 
-                                            value={financeData.taxa_antecipacao}
-                                            onChange={e => handleValueChange('taxa_antecipacao', e.target.value)}
-                                            className="w-full pl-3 pr-8 py-2 rounded-lg border border-stone-200 bg-white text-sm font-black text-stone-700 outline-none focus:ring-2 focus:ring-wood-light text-right transition-all"
-                                            placeholder="0,00"
-                                        />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="p-6">
+                        {marcenariaId && <MeiosRecebimentoManager marcenariaId={marcenariaId} />}
                     </div>
                 </div>
 

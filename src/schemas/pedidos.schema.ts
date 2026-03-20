@@ -6,7 +6,11 @@ export const ParcelaSchema = z.object({
   data_vencimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de data inválido (YYYY-MM-DD)'),
   modalidade: z.enum(['dinheiro', 'pix', 'cheque', 'cartao_debito', 'cartao_credito', 'boleto']),
   status: z.enum(['pendente', 'pago']).default('pendente'),
-  // Campos opcionais de cartão/taxa
+  // Campos DB Múltiplas Operadoras
+  meio_recebimento_id: z.string().uuid().optional().nullable(),
+  num_parcelas_cartao: z.number().int().min(1).max(12).optional(),
+  se_antecipado: z.boolean().optional(),
+  // Campos opcionais antigos
   taxa_cartao: z.number().min(0).optional(),
   valor_liquido: z.number().min(0).optional(),
   data_bom_para: z.string().optional()

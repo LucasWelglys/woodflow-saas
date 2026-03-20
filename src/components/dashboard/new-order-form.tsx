@@ -28,7 +28,12 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
     valor: number
     dataVencimento: string
     modalidade: string
+    meioRecebimentoId?: string
+    numParcelasCartao?: number
+    seAntecipado?: boolean
   }[]>([])
+
+  const [meiosRecebimento, setMeiosRecebimento] = useState<{id: string, nome_operadora: string, tipo: string, taxas_json: any, taxa_fixa: number, taxa_antecipacao: number}[]>([])
 
   const supabase = createClient()
   const isSubmitting = useRef(false)
@@ -64,6 +69,14 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
 
       setTaxRate(config?.taxa_credito_vista || 0)
 
+      const { data: meiosData } = await supabase
+        .from('meios_recebimento')
+        .select('*')
+        .eq('marcenaria_id', marcenaria.id)
+        .eq('ativo', true)
+        
+      if (meiosData) setMeiosRecebimento(meiosData)
+
       const { data: clientesData } = await supabase
         .from('clientes')
         .select('id, nome')
@@ -91,7 +104,10 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
           valor: p.valor,
           valorStr: formatCurrency((p.valor * 100).toString()),
           dataVencimento: p.data_vencimento,
-          modalidade: p.modalidade
+          modalidade: p.modalidade,
+          meioRecebimentoId: p.meio_recebimento_id,
+          numParcelasCartao: p.num_parcelas_cartao,
+          seAntecipado: p.se_antecipado
         })))
       }
     }
@@ -133,7 +149,10 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
       valorStr: formatCurrency((valorTotal * 100).toString()),
       valor: valorTotal,
       dataVencimento: new Date().toISOString().split('T')[0],
-      modalidade: 'dinheiro'
+      modalidade: 'dinheiro',
+      meioRecebimentoId: '',
+      numParcelasCartao: 1,
+      seAntecipado: false
     }])
   }
 
@@ -176,7 +195,10 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
         numero_parcela: p.numero,
         valor: p.valor,
         data_vencimento: p.dataVencimento,
-        modalidade: p.modalidade
+        modalidade: p.modalidade,
+        meio_recebimento_id: p.meioRecebimentoId || null,
+        num_parcelas_cartao: p.numParcelasCartao || 1,
+        se_antecipado: p.seAntecipado || false
       }))
 
       if (editingOrder) {
@@ -264,10 +286,10 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
                 />
               </div>
               {valorTotal > 0 && (
-                <div className="flex items-center gap-1.5 px-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tight">
-                    Líquido estimado: <span className="text-stone-800 ml-1">{formatBRL(valorTotal * (1 - taxRate / 100))}</span>
+                <div className="flex items-center gap-1.5 px-1 mt-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-wood-mid animate-pulse" />
+                  <p className="text-[10px] font-black text-stone-500 uppercase tracking-tight">
+                    O valor líquido será calculado dinamicamente pelas máquinas.
                   </p>
                 </div>
               )}
@@ -302,7 +324,16 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
               {editingOrder?.status !== 'contrato' && (
                 <button 
                   type="button"
-                  onClick={() => setParcelas([...parcelas, { numero: parcelas.length + 1, valorStr: '', valor: 0, dataVencimento: '', modalidade: 'dinheiro' }])}
+                  onClick={() => setParcelas([...parcelas, { 
+                    numero: parcelas.length + 1, 
+                    valorStr: '', 
+                    valor: 0, 
+                    dataVencimento: '', 
+                    modalidade: 'dinheiro',
+                    meioRecebimentoId: '',
+                    numParcelasCartao: 1,
+                    seAntecipado: false
+                  }])}
                   className="text-xs font-bold text-wood-mid hover:underline"
                 >
                   + Adicionar Parcela
@@ -312,55 +343,116 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
             
             <div className="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
               {parcelas.map((p, idx) => (
-                <div key={idx} className="flex gap-3 items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
-                  <span className="text-xs font-bold text-stone-400 w-8">{p.numero}º</span>
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] font-bold">R$</span>
+                <div key={idx} className="flex flex-col gap-3 bg-stone-50 p-3 rounded-xl border border-stone-100">
+                  <div className="flex gap-3 items-center">
+                    <span className="text-xs font-bold text-stone-400 w-6">{p.numero}º</span>
+                    <div className="relative flex-1">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] font-bold">R$</span>
+                      <input 
+                        type="text" 
+                        placeholder="0,00"
+                        value={p.valorStr}
+                        disabled={editingOrder?.status === 'contrato'}
+                        onChange={e => {
+                          const formatted = formatCurrency(e.target.value)
+                          const newP = [...parcelas]
+                          newP[idx].valorStr = formatted
+                          newP[idx].valor = parseCurrency(formatted)
+                          setParcelas(newP)
+                        }}
+                        className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold text-stone-600 disabled:opacity-60" 
+                      />
+                    </div>
+                    
                     <input 
-                      type="text" 
-                      placeholder="0,00"
-                      value={p.valorStr}
+                      type="date" 
+                      value={p.dataVencimento}
                       disabled={editingOrder?.status === 'contrato'}
                       onChange={e => {
-                        const formatted = formatCurrency(e.target.value)
                         const newP = [...parcelas]
-                        newP[idx].valorStr = formatted
-                        newP[idx].valor = parseCurrency(formatted)
+                        newP[idx].dataVencimento = e.target.value
                         setParcelas(newP)
                       }}
-                      className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold text-stone-600 disabled:opacity-60" 
+                      className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs disabled:opacity-60" 
                     />
+                    <select 
+                      value={p.modalidade}
+                      disabled={editingOrder?.status === 'contrato'}
+                      onChange={e => {
+                        const newP = [...parcelas]
+                        // Remove o vínculo se trocar de modalidade radicalmente para evitar UI inconsistente
+                        newP[idx].modalidade = e.target.value
+                        newP[idx].meioRecebimentoId = '' 
+                        setParcelas(newP)
+                      }}
+                      className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-bold disabled:opacity-60"
+                    >
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="pix">PIX</option>
+                      <option value="boleto">Boleto</option>
+                      <option value="cartao_credito">Crédito</option>
+                      <option value="cartao_debito">Débito</option>
+                      <option value="cheque">Cheque</option>
+                    </select>
                   </div>
-                  <div className="flex flex-col items-end w-24 px-2">
-                    <span className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter">Líquido</span>
-                    <span className="text-[10px] font-black text-emerald-600">{formatBRL(p.valor * (1 - taxRate / 100))}</span>
+                  
+                  {/* Linha 2 de Parcela: Dropdowns Dinâmicos Baseados na Modalidade */}
+                  <div className="flex gap-3 items-center pl-9">
+                     <select
+                        value={p.meioRecebimentoId || ''}
+                        disabled={editingOrder?.status === 'contrato'}
+                        onChange={e => {
+                          const newP = [...parcelas]
+                          newP[idx].meioRecebimentoId = e.target.value
+                          setParcelas(newP)
+                        }}
+                        className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs disabled:opacity-60 shadow-inner"
+                     >
+                        <option value="">-- Selecione Operadora/Tag --</option>
+                        {meiosRecebimento
+                            .filter(m => {
+                               // Regra de Filtro na UI
+                               if (p.modalidade === 'cartao_credito' || p.modalidade === 'cartao_debito') return m.tipo.includes('cartao')
+                               return m.tipo === p.modalidade
+                            })
+                            .map(m => (
+                              <option key={m.id} value={m.id}>{m.nome_operadora}</option>
+                            ))
+                        }
+                     </select>
+                     
+                     {p.modalidade === 'cartao_credito' && (
+                        <>
+                           <select
+                              value={p.numParcelasCartao || 1}
+                              disabled={editingOrder?.status === 'contrato'}
+                              onChange={e => {
+                                 const newP = [...parcelas]
+                                 newP[idx].numParcelasCartao = parseInt(e.target.value) || 1
+                                 setParcelas(newP)
+                              }}
+                              className="w-24 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs disabled:opacity-60 shadow-inner"
+                           >
+                              {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n}x</option>)}
+                           </select>
+
+                           <label className="flex items-center gap-1.5 text-xs text-stone-500 font-bold bg-white px-2 py-1 rounded-lg border border-stone-200">
+                             <input 
+                               type="checkbox"
+                               checked={p.seAntecipado || false}
+                               disabled={editingOrder?.status === 'contrato'}
+                               onChange={e => {
+                                 const newP = [...parcelas]
+                                 newP[idx].seAntecipado = e.target.checked
+                                 setParcelas(newP)
+                               }}
+                               className="rounded border-stone-300 text-wood-dark focus:ring-wood-mid h-3 w-3"
+                             />
+                             Antecipar
+                           </label>
+                        </>
+                     )}
                   </div>
-                  <input 
-                    type="date" 
-                    value={p.dataVencimento}
-                    disabled={editingOrder?.status === 'contrato'}
-                    onChange={e => {
-                      const newP = [...parcelas]
-                      newP[idx].dataVencimento = e.target.value
-                      setParcelas(newP)
-                    }}
-                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs disabled:opacity-60" 
-                  />
-                  <select 
-                    value={p.modalidade}
-                    disabled={editingOrder?.status === 'contrato'}
-                    onChange={e => {
-                      const newP = [...parcelas]
-                      newP[idx].modalidade = e.target.value
-                      setParcelas(newP)
-                    }}
-                    className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs disabled:opacity-60"
-                  >
-                    <option value="dinheiro">Dinheiro</option>
-                    <option value="pix">PIX</option>
-                    <option value="boleto">Boleto</option>
-                    <option value="cartao_credito">Crédito</option>
-                  </select>
                 </div>
               ))}
             </div>
