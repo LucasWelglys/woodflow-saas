@@ -3,28 +3,36 @@ import { SupabaseClient } from '@supabase/supabase-js'
 export async function getFinanceiroStats(supabase: SupabaseClient, marcenariaId: string) {
   const { data: allParcelas } = await supabase
     .from('parcelas')
-    .select('valor, valor_liquido, status, data_vencimento')
+    .select('valor, valor_liquido, status, data_vencimento, pedidos!inner(status)')
     .eq('marcenaria_id', marcenariaId)
 
-  // O "Recebido" é o que já está com status 'pago'
+  // O "Recebido" é o que já está com status 'pago' (ignora se é orçamento ou não, dinheiro já entrou)
   const totalRecebido = allParcelas
     ?.filter(p => p.status === 'pago')
     .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
 
-  // O "A Receber" engloba todas as parcelas com status 'pendente' 
-  // que pertencem à marcenaria em questão
+  // O "A Receber" engloba parcelas pendentes de pedidos concretos (não orçamentos)
   const totalAReceber = allParcelas
-    ?.filter(p => p.status === 'pendente')
+    ?.filter(p => p.status === 'pendente' && (p.pedidos as any)?.status !== 'orcamento')
     .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
 
-  // O "Vencido" engloba parcelas pendentes com data de vencimento anterior a hoje
+  // O "Vencido" engloba pendentes atrasados (não orçamentos)
   const today = new Date().toISOString().split('T')[0]
   const totalVencido = allParcelas
-    ?.filter(p => p.status === 'pendente' && p.data_vencimento < today)
+    ?.filter(p => p.status === 'pendente' && p.data_vencimento < today && (p.pedidos as any)?.status !== 'orcamento')
     .reduce((sum, p) => sum + Number(p.valor_liquido || p.valor), 0) || 0
 
-  // O "Faturamento" (Bruto) é a soma do que já foi Recebido + o que falta Receber
+  // O "Faturamento" (Bruto) é a soma do que já foi Recebido + o que falta Receber (apenas contratos)
   const totalBruto = totalRecebido + totalAReceber
+
+  // Busca Total em Orçamentos
+  const { data: orcamentos } = await supabase
+    .from('pedidos')
+    .select('valor_total')
+    .eq('marcenaria_id', marcenariaId)
+    .eq('status', 'orcamento')
+  
+  const totalEmOrcamentos = orcamentos?.reduce((sum, o) => sum + Number(o.valor_total), 0) || 0
 
   // Busca Custos de Projetos
   const { data: custos } = await supabase
@@ -52,6 +60,7 @@ export async function getFinanceiroStats(supabase: SupabaseClient, marcenariaId:
     custos: totalCustos,
     despesas: totalDespesas,
     saldoReal,
-    saldoProjetado
+    saldoProjetado,
+    totalEmOrcamentos
   }
 }

@@ -44,7 +44,8 @@ export default function DashboardPage() {
       despesas: 0,
       saldoReal: 0,
       saldoProjetado: 0,
-      custos: 0
+      custos: 0,
+      totalEmOrcamentos: 0
     },
     orders: []
   })
@@ -135,7 +136,8 @@ export default function DashboardPage() {
           despesas: stats.despesas,
           saldoReal: stats.saldoReal,
           saldoProjetado: stats.saldoProjetado,
-          custos: stats.custos
+          custos: stats.custos,
+          totalEmOrcamentos: stats.totalEmOrcamentos
         },
         orders: ordersTyped
       })
@@ -198,7 +200,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
         <SummaryCard 
           title="💰 FATURAMENTO" 
           value={fmt(data.summary.bruto)} 
@@ -212,6 +214,13 @@ export default function DashboardPage() {
           subtitle="Faturamento recebido" 
           icon={Wallet}
           variant="success"
+          loading={loading}
+        />
+        <SummaryCard 
+          title="🏷️ EM ORÇAMENTO" 
+          value={fmt(data.summary.totalEmOrcamentos)} 
+          subtitle="Propostas abertas" 
+          icon={TrendingUp}
           loading={loading}
         />
         <SummaryCard 

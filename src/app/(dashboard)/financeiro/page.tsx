@@ -208,9 +208,9 @@ export default function FinanceiroPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard 
-          title="💰 FATURAMENTO BRUTO" 
+          title="💰 TOTAL EM CONTRATOS" 
           value={fmt(metrics.bruto)} 
-          subtitle="Total em contratos" 
+          subtitle="Faturamento global sem propostas" 
           icon={TrendingUp}
           loading={loading}
         />
