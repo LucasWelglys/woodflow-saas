@@ -24,12 +24,16 @@ export const PedidoParcelasInputSchema = z.object({
   data: UpdatePedidoSchema,
   parcelasData: z.array(ParcelaSchema).min(1, 'No mínimo uma parcela é requerida.')
 }).superRefine((data, ctx) => {
-  const somaParcelas = data.parcelasData.reduce((acc, p) => acc + p.valor, 0)
-  // Margem de erro para arredondamento
-  if (Math.abs(somaParcelas - data.data.valor_total) > 0.01) {
+  const somaCentavosParcelas = data.parcelasData.reduce((acc, p) => acc + Math.round(p.valor * 100), 0)
+  const totalCentavos = Math.round(data.data.valor_total * 100)
+  
+  // Margem de erro estrita para 1 centavo (para lidar com dízimas periódicas)
+  if (Math.abs(somaCentavosParcelas - totalCentavos) > 1) {
+    const somaReais = somaCentavosParcelas / 100
+    const totalReais = totalCentavos / 100
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `A soma das parcelas (R$ ${somaParcelas.toFixed(2)}) difere do valor total (R$ ${data.data.valor_total.toFixed(2)}).`,
+      message: `A soma das parcelas (R$ ${somaReais.toFixed(2).replace('.', ',')}) não corresponde ao total (R$ ${totalReais.toFixed(2).replace('.', ',')}). Verifique os centavos.`,
       path: ['parcelasData']
     })
   }

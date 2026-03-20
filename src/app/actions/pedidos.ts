@@ -3,64 +3,95 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getMarcenariaContext } from '@/lib/marcenaria'
-import { UpdatePedidoSchema, ParcelaSchema, CreatePedidoSchema } from '@/schemas/pedidos.schema'
+import { UpdatePedidoSchema, ParcelaSchema, CreatePedidoSchema, PedidoParcelasInputSchema } from '@/schemas/pedidos.schema'
 import { logAction } from '@/lib/audit'
 
 export async function createPedido(data: any, parcelasData: any[]) {
   const supabase = createClient()
-  
-  const parsedData = CreatePedidoSchema.parse(data)
-  const parsedParcelas = ParcelaSchema.array().parse(parcelasData)
+  const pedidoId = crypto.randomUUID()
+  let marcenariaId = ''
 
-  const marcenaria = await getMarcenariaContext()
-  if (!marcenaria) throw new Error('Marcenaria não encontrada ou usuário não autenticado')
+  try {
+    const marcenaria = await getMarcenariaContext()
+    if (!marcenaria) {
+      console.error('[ACTIONS/PEDIDOS] Marcenaria não encontrada. getMarcenariaContext falhou.')
+      return { success: false, error: 'Sessão inválida. Por favor, refaça o login e tente novamente.' }
+    }
+    marcenariaId = marcenaria.id
 
-  // 1. Cria o pedido
-  const { data: order, error: orderErr } = await supabase
-    .from('pedidos')
-    .insert({
-      marcenaria_id: marcenaria.id,
-      cliente_id: parsedData.cliente_id,
-      descricao: parsedData.descricao,
-      valor_total: parsedData.valor_total,
-      status: 'orcamento'
+    // Executamos a validação de soma de centavos combinada (T3.6 precisão matemática)
+    const parsedInput = PedidoParcelasInputSchema.parse({
+      pedidoId,
+      data,
+      parcelasData
     })
-    .select()
-    .single()
 
-  if (orderErr) {
-    console.error('Erro ao criar pedido:', orderErr)
-    throw new Error(orderErr.message)
+    const parsedData = parsedInput.data
+    const parsedParcelas = parsedInput.parcelasData
+
+    // 1. Cria o pedido
+    const { error: orderErr } = await supabase
+      .from('pedidos')
+      .insert({
+        id: pedidoId,
+        marcenaria_id: marcenaria.id,
+        cliente_id: parsedData.cliente_id,
+        descricao: parsedData.descricao,
+        valor_total: parsedData.valor_total,
+        status: 'orcamento'
+      })
+
+    if (orderErr) {
+      throw new Error(`Falha no banco de dados ao criar pedido: ${orderErr.message}`)
+    }
+
+    // 2. Insere parcelas
+    const { error: insertError } = await supabase
+      .from('parcelas')
+      .insert(parsedParcelas.map(p => ({
+        ...p,
+        pedido_id: pedidoId,
+        marcenaria_id: marcenaria.id,
+        status: p.status || 'pendente'
+      })))
+
+    if (insertError) {
+      throw new Error(`Pedido criado, mas erro ao gerar parcelas: ${insertError.message}`)
+    }
+
+    console.log(`[ACTIONS/PEDIDOS] Enviando audit log para criação do pedido ${pedidoId}`)
+    await logAction(supabase, marcenaria.id, 'pedidos', 'INSERT', pedidoId, { 
+      acao: 'criacao_pedido', 
+      cliente_id: parsedData.cliente_id,
+      valor_total: parsedData.valor_total,
+      parcelas_geradas: parsedParcelas.length 
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/pedidos')
+    revalidatePath('/financeiro')
+    
+    return { success: true, orderId: pedidoId }
+  } catch (err: any) {
+    console.error('[SERVER EXCEPTION] createPedido:', err)
+    
+    let errorMessage = err.message || 'Erro crítico no processamento da Server Action.'
+    // Se for erro de validação do Zod, extraímos a mensagem clara do UX:
+    if (err.issues) {
+      errorMessage = err.issues.map((i: any) => i.message).join(' | ')
+    }
+
+    if (marcenariaId) {
+      console.log(`[ACTIONS/PEDIDOS] Gravando log inteligente de falha no pedido ${pedidoId}`)
+      await logAction(supabase, marcenariaId, 'pedidos', 'INSERT', pedidoId, {
+        acao: 'erro_criacao_pedido',
+        motivo: errorMessage,
+        payload: { data, parcelasData }
+      })
+    }
+
+    return { success: false, error: errorMessage }
   }
-
-  // 2. Insere parcelas
-  const { error: insertError } = await supabase
-    .from('parcelas')
-    .insert(parsedParcelas.map(p => ({
-      ...p,
-      pedido_id: order.id,
-      marcenaria_id: marcenaria.id,
-      status: p.status || 'pendente'
-    })))
-
-  if (insertError) {
-    console.error('Erro ao recriar parcelas:', insertError)
-    throw new Error('Pedido criado, mas erro ao gerar parcelas.')
-  }
-
-  console.log(`[ACTIONS/PEDIDOS] Enviando audit log para criação do pedido ${order.id}`)
-  await logAction(supabase, marcenaria.id, 'pedidos', 'INSERT', order.id, { 
-    acao: 'criacao_pedido', 
-    cliente_id: parsedData.cliente_id,
-    valor_total: parsedData.valor_total,
-    parcelas_geradas: parsedParcelas.length 
-  })
-
-  revalidatePath('/dashboard')
-  revalidatePath('/pedidos')
-  revalidatePath('/financeiro')
-  
-  return { success: true, orderId: order.id }
 }
 
 export async function converterParaContrato(pedidoId: string) {
@@ -134,54 +165,57 @@ export async function deletePedido(pedidoId: string) {
 }
 
 export async function updatePedido(pedidoId: string, data: any, parcelasData: any[]) {
-  const supabase = createClient()
-  
-  const parsedData = UpdatePedidoSchema.parse(data)
-  const parsedParcelas = ParcelaSchema.array().parse(parcelasData)
+  try {
+    const supabase = createClient()
+    
+    const parsedData = UpdatePedidoSchema.parse(data)
+    const parsedParcelas = ParcelaSchema.array().parse(parcelasData)
 
-  // 1. Atualiza o pedido
-  const { error: updateError } = await supabase
-    .from('pedidos')
-    .update({
-      cliente_id: parsedData.cliente_id,
-      descricao: parsedData.descricao,
-      valor_total: parsedData.valor_total
-    })
-    .eq('id', pedidoId)
+    // 1. Atualiza o pedido
+    const { error: updateError } = await supabase
+      .from('pedidos')
+      .update({
+        cliente_id: parsedData.cliente_id,
+        descricao: parsedData.descricao,
+        valor_total: parsedData.valor_total
+      })
+      .eq('id', pedidoId)
 
-  if (updateError) {
-    console.error('Erro ao atualizar pedido:', updateError)
-    throw new Error(updateError.message)
+    if (updateError) {
+      console.error('[ACTIONS/PEDIDOS] Erro ao atualizar pedido:', updateError)
+      return { success: false, error: `Falha no banco: ${updateError.message}` }
+    }
+
+    // 2. Substitui as parcelas
+    await supabase.from('parcelas').delete().eq('pedido_id', pedidoId)
+
+    const marcenaria = await getMarcenariaContext()
+    if (!marcenaria) return { success: false, error: 'Usuário não autenticado.' }
+
+    const { error: insertError } = await supabase
+      .from('parcelas')
+      .insert(parsedParcelas.map(p => ({
+        ...p,
+        pedido_id: pedidoId,
+        marcenaria_id: marcenaria.id,
+        status: p.status || 'pendente'
+      })))
+
+    if (insertError) {
+      console.error('[ACTIONS/PEDIDOS] Erro ao recriar parcelas:', insertError)
+      return { success: false, error: `Parcelas falharam: ${insertError.message}` }
+    }
+
+    await logAction(supabase, marcenaria.id, 'pedidos', 'UPDATE', pedidoId, { acao: 'update_pedido_e_parcelas', dados: parsedData })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/pedidos')
+    revalidatePath(`/pedidos/${pedidoId}`)
+    revalidatePath('/financeiro')
+    
+    return { success: true }
+  } catch (err: any) {
+    console.error('[SERVER EXCEPTION] updatePedido:', err)
+    return { success: false, error: err.message || 'Erro crítico ao atualizar pedido.' }
   }
-
-  // 2. Substitui as parcelas (mais seguro para evitar inconsistências no plano de pagamento)
-  // Deleta as antigas
-  await supabase.from('parcelas').delete().eq('pedido_id', pedidoId)
-
-  // Insere as novas
-  const marcenaria = await getMarcenariaContext()
-  if (!marcenaria) throw new Error('Marcenaria não encontrada ou usuário não autenticado')
-
-  const { error: insertError } = await supabase
-    .from('parcelas')
-    .insert(parsedParcelas.map(p => ({
-      ...p,
-      pedido_id: pedidoId,
-      marcenaria_id: marcenaria.id,
-      status: p.status || 'pendente'
-    })))
-
-  if (insertError) {
-    console.error('Erro ao recriar parcelas:', insertError)
-    throw new Error('Pedido atualizado, mas erro ao gerar novas parcelas.')
-  }
-
-  await logAction(supabase, marcenaria.id, 'pedidos', 'UPDATE', pedidoId, { acao: 'update_pedido_e_parcelas', dados: parsedData })
-
-  revalidatePath('/dashboard')
-  revalidatePath('/pedidos')
-  revalidatePath(`/pedidos/${pedidoId}`)
-  revalidatePath('/financeiro')
-  
-  return { success: true }
 }

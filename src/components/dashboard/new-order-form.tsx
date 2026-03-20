@@ -186,7 +186,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
           valor_total: valorTotal
         }, parcelasToSave)
         
-        if (!result.success) throw new Error('Erro ao atualizar pedido')
+        if (!result.success) throw new Error((result as any).error || 'Erro ao atualizar pedido')
       } else {
         const result = await createPedido({
           cliente_id: clienteId,
@@ -194,7 +194,7 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
           valor_total: valorTotal
         }, parcelasToSave)
         
-        if (!result.success) throw new Error('Erro ao criar pedido.')
+        if (!result.success) throw new Error((result as any).error || 'Erro ao criar pedido. Verifique os logs e cookies.')
       }
 
       onSuccess()
