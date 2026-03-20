@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { X, Save } from 'lucide-react'
+import { X, Save, Trash2 } from 'lucide-react'
 import { Cliente, Order } from '@/types/dashboard'
 import { updatePedido, createPedido } from '@/app/actions/pedidos'
 
@@ -34,6 +34,8 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
   }[]>([])
 
   const [meiosRecebimento, setMeiosRecebimento] = useState<{id: string, nome_operadora: string, tipo: string, taxas_json: any, taxa_fixa: number, taxa_antecipacao: number}[]>([])
+  const [globalNumParcelasCartao, setGlobalNumParcelasCartao] = useState(1)
+  const [globalAnteciparCartao, setGlobalAnteciparCartao] = useState(false)
 
   const supabase = createClient()
   const isSubmitting = useRef(false)
@@ -197,8 +199,8 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
         data_vencimento: p.dataVencimento,
         modalidade: p.modalidade,
         meio_recebimento_id: p.meioRecebimentoId || null,
-        num_parcelas_cartao: p.numParcelasCartao || 1,
-        se_antecipado: p.seAntecipado || false
+        num_parcelas_cartao: (p.modalidade === 'cartao_credito' || p.modalidade === 'cartao_debito') ? globalNumParcelasCartao : 1,
+        se_antecipado: (p.modalidade === 'cartao_credito' || p.modalidade === 'cartao_debito') ? globalAnteciparCartao : false
       }))
 
       if (editingOrder) {
@@ -341,118 +343,130 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
               )}
             </div>
             
-            <div className="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+            {parcelas.some(p => p.modalidade === 'cartao_credito' || p.modalidade === 'cartao_debito') && (
+              <div className="mb-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex items-center justify-between">
+                <div>
+                   <p className="text-sm font-bold text-emerald-800">Regras de Cartão (Global)</p>
+                   <p className="text-[10px] text-emerald-600 uppercase font-bold tracking-widest mt-0.5">Aplicadas a todas as parcelas de cartão.</p>
+                </div>
+                <div className="flex gap-4 items-center bg-white py-1.5 px-3 rounded-lg border border-emerald-100">
+                   <div className="flex items-center gap-2">
+                      <label className="text-xs font-bold text-emerald-700">Vezes na Máquina:</label>
+                      <select
+                         value={globalNumParcelasCartao}
+                         disabled={editingOrder?.status === 'contrato'}
+                         onChange={e => setGlobalNumParcelasCartao(parseInt(e.target.value))}
+                         className="bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1 text-xs font-bold shadow-sm outline-none text-emerald-900 focus:bg-white transition-colors"
+                      >
+                         {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n}x</option>)}
+                      </select>
+                   </div>
+                   <div className="border-l border-emerald-100 pl-4">
+                      <label className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold cursor-pointer hover:opacity-80 transition-opacity">
+                        <input 
+                          type="checkbox"
+                          checked={globalAnteciparCartao}
+                          disabled={editingOrder?.status === 'contrato'}
+                          onChange={e => setGlobalAnteciparCartao(e.target.checked)}
+                          className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5 cursor-pointer"
+                        />
+                        Antecipar (D+2)
+                      </label>
+                   </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
               {parcelas.map((p, idx) => (
-                <div key={idx} className="flex flex-col gap-3 bg-stone-50 p-3 rounded-xl border border-stone-100">
-                  <div className="flex gap-3 items-center">
-                    <span className="text-xs font-bold text-stone-400 w-6">{p.numero}º</span>
-                    <div className="relative flex-1">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] font-bold">R$</span>
-                      <input 
-                        type="text" 
-                        placeholder="0,00"
-                        value={p.valorStr}
-                        disabled={editingOrder?.status === 'contrato'}
-                        onChange={e => {
-                          const formatted = formatCurrency(e.target.value)
-                          const newP = [...parcelas]
-                          newP[idx].valorStr = formatted
-                          newP[idx].valor = parseCurrency(formatted)
-                          setParcelas(newP)
-                        }}
-                        className="w-full bg-white border border-stone-200 rounded-lg pl-7 pr-2 py-1.5 text-xs font-bold text-stone-600 disabled:opacity-60" 
-                      />
-                    </div>
-                    
+                <div key={idx} className="flex gap-2 items-center bg-stone-50 p-1.5 rounded-xl border border-stone-100 hover:border-wood-mid/30 transition-colors">
+                  <span className="text-xs font-bold text-stone-400 w-5 text-center">{p.numero}º</span>
+                  <div className="relative w-28">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 text-[10px] font-bold">R$</span>
                     <input 
-                      type="date" 
-                      value={p.dataVencimento}
+                      type="text" 
+                      placeholder="0,00"
+                      value={p.valorStr}
                       disabled={editingOrder?.status === 'contrato'}
                       onChange={e => {
+                        const formatted = formatCurrency(e.target.value)
                         const newP = [...parcelas]
-                        newP[idx].dataVencimento = e.target.value
+                        newP[idx].valorStr = formatted
+                        newP[idx].valor = parseCurrency(formatted)
                         setParcelas(newP)
                       }}
-                      className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs disabled:opacity-60" 
+                      className="w-full bg-white border border-stone-200 rounded-lg pl-6 pr-2 py-1.5 text-xs font-bold text-stone-600 disabled:opacity-60 focus:ring-1 outline-none" 
                     />
-                    <select 
-                      value={p.modalidade}
-                      disabled={editingOrder?.status === 'contrato'}
-                      onChange={e => {
-                        const newP = [...parcelas]
-                        // Remove o vínculo se trocar de modalidade radicalmente para evitar UI inconsistente
-                        newP[idx].modalidade = e.target.value
-                        newP[idx].meioRecebimentoId = '' 
-                        setParcelas(newP)
-                      }}
-                      className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-bold disabled:opacity-60"
-                    >
-                      <option value="dinheiro">Dinheiro</option>
-                      <option value="pix">PIX</option>
-                      <option value="boleto">Boleto</option>
-                      <option value="cartao_credito">Crédito</option>
-                      <option value="cartao_debito">Débito</option>
-                      <option value="cheque">Cheque</option>
-                    </select>
                   </div>
                   
-                  {/* Linha 2 de Parcela: Dropdowns Dinâmicos Baseados na Modalidade */}
-                  <div className="flex gap-3 items-center pl-9">
-                     <select
-                        value={p.meioRecebimentoId || ''}
-                        disabled={editingOrder?.status === 'contrato'}
-                        onChange={e => {
-                          const newP = [...parcelas]
-                          newP[idx].meioRecebimentoId = e.target.value
-                          setParcelas(newP)
-                        }}
-                        className="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs disabled:opacity-60 shadow-inner"
-                     >
-                        <option value="">-- Selecione Operadora/Tag --</option>
-                        {meiosRecebimento
-                            .filter(m => {
-                               // Regra de Filtro na UI
-                               if (p.modalidade === 'cartao_credito' || p.modalidade === 'cartao_debito') return m.tipo.includes('cartao')
-                               return m.tipo === p.modalidade
-                            })
-                            .map(m => (
-                              <option key={m.id} value={m.id}>{m.nome_operadora}</option>
-                            ))
-                        }
-                     </select>
-                     
-                     {p.modalidade === 'cartao_credito' && (
-                        <>
-                           <select
-                              value={p.numParcelasCartao || 1}
-                              disabled={editingOrder?.status === 'contrato'}
-                              onChange={e => {
-                                 const newP = [...parcelas]
-                                 newP[idx].numParcelasCartao = parseInt(e.target.value) || 1
-                                 setParcelas(newP)
-                              }}
-                              className="w-24 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs disabled:opacity-60 shadow-inner"
-                           >
-                              {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n}x</option>)}
-                           </select>
+                  <input 
+                    type="date" 
+                    value={p.dataVencimento}
+                    disabled={editingOrder?.status === 'contrato'}
+                    onChange={e => {
+                      const newP = [...parcelas]
+                      newP[idx].dataVencimento = e.target.value
+                      setParcelas(newP)
+                    }}
+                    className="w-[120px] bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-600 disabled:opacity-60 focus:ring-1 outline-none" 
+                  />
+                  
+                  <select 
+                    value={p.modalidade}
+                    disabled={editingOrder?.status === 'contrato'}
+                    onChange={e => {
+                      const newP = [...parcelas]
+                      newP[idx].modalidade = e.target.value
+                      newP[idx].meioRecebimentoId = '' 
+                      setParcelas(newP)
+                    }}
+                    className="w-[110px] bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-stone-600 disabled:opacity-60 focus:ring-1 outline-none"
+                  >
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="pix">PIX</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="cartao_credito">Crédito</option>
+                    <option value="cartao_debito">Débito</option>
+                    <option value="cheque">Cheque</option>
+                  </select>
 
-                           <label className="flex items-center gap-1.5 text-xs text-stone-500 font-bold bg-white px-2 py-1 rounded-lg border border-stone-200">
-                             <input 
-                               type="checkbox"
-                               checked={p.seAntecipado || false}
-                               disabled={editingOrder?.status === 'contrato'}
-                               onChange={e => {
-                                 const newP = [...parcelas]
-                                 newP[idx].seAntecipado = e.target.checked
-                                 setParcelas(newP)
-                               }}
-                               className="rounded border-stone-300 text-wood-dark focus:ring-wood-mid h-3 w-3"
-                             />
-                             Antecipar
-                           </label>
-                        </>
-                     )}
-                  </div>
+                  <select
+                     value={p.meioRecebimentoId || ''}
+                     disabled={editingOrder?.status === 'contrato'}
+                     onChange={e => {
+                       const newP = [...parcelas]
+                       newP[idx].meioRecebimentoId = e.target.value
+                       setParcelas(newP)
+                     }}
+                     className="flex-1 min-w-0 bg-white border border-stone-200 rounded-lg px-2 py-1.5 text-[11px] font-medium disabled:opacity-60 text-stone-600 focus:ring-1 outline-none cursor-pointer"
+                  >
+                     <option value="">Operadora / Caixa</option>
+                     {meiosRecebimento
+                         .filter(m => {
+                            if (p.modalidade === 'cartao_credito' || p.modalidade === 'cartao_debito') return m.tipo.includes('cartao')
+                            return m.tipo === p.modalidade
+                         })
+                         .map(m => (
+                           <option key={m.id} value={m.id}>{m.nome_operadora}</option>
+                         ))
+                     }
+                  </select>
+
+                  {editingOrder?.status !== 'contrato' && parcelas.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newP = parcelas.filter((_, i) => i !== idx).map((parc, i) => ({ ...parc, numero: i + 1 }))
+                        setParcelas(newP)
+                      }}
+                      className="p-1.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1 border border-transparent hover:border-red-100"
+                      title="Remover parcela"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <div className="w-[34px] ml-1"></div>
+                  )}
                 </div>
               ))}
             </div>
