@@ -11,6 +11,8 @@ export async function logAction(
   try {
     const { data: { user } } = await supabase.auth.getUser()
 
+    console.log(`[AUDIT LOG REQUEST] Acao: ${acao} | Tabela: ${tabelaAfetada} | RegistroId: ${registroId} | MarcenariaId: ${marcenariaId} | UserID: ${user?.id}`)
+
     const { error } = await supabase.from('audit_logs').insert({
       marcenaria_id: marcenariaId,
       user_id: user?.id || null,
@@ -21,11 +23,12 @@ export async function logAction(
     })
     
     if (error) {
-      console.error('[AUDIT ERROR]', error)
-      // Em sistemas criticos re-lancariamos o erro, 
-      // mas vamos prevenir crash de fluxo principal.
+      console.error('[AUDIT ERROR] Falha ao inserir log de auditoria no Supabase:', JSON.stringify(error))
+    } else {
+      console.log(`[AUDIT SUCESSO] Log de auditoria criado para a acao ${acao} (Registro ${registroId})`)
     }
   } catch (err) {
-    console.error('[AUDIT EXCEPTION]', err)
+    console.error('[AUDIT EXCEPTION] Erro critico ao tentar escrever auditoria:', err)
   }
 }
+

@@ -3,8 +3,66 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getMarcenariaContext } from '@/lib/marcenaria'
-import { UpdatePedidoSchema, ParcelaSchema } from '@/schemas/pedidos.schema'
+import { UpdatePedidoSchema, ParcelaSchema, CreatePedidoSchema } from '@/schemas/pedidos.schema'
 import { logAction } from '@/lib/audit'
+
+export async function createPedido(data: any, parcelasData: any[]) {
+  const supabase = createClient()
+  
+  const parsedData = CreatePedidoSchema.parse(data)
+  const parsedParcelas = ParcelaSchema.array().parse(parcelasData)
+
+  const marcenaria = await getMarcenariaContext()
+  if (!marcenaria) throw new Error('Marcenaria não encontrada ou usuário não autenticado')
+
+  // 1. Cria o pedido
+  const { data: order, error: orderErr } = await supabase
+    .from('pedidos')
+    .insert({
+      marcenaria_id: marcenaria.id,
+      cliente_id: parsedData.cliente_id,
+      descricao: parsedData.descricao,
+      valor_total: parsedData.valor_total,
+      status: 'orcamento'
+    })
+    .select()
+    .single()
+
+  if (orderErr) {
+    console.error('Erro ao criar pedido:', orderErr)
+    throw new Error(orderErr.message)
+  }
+
+  // 2. Insere parcelas
+  const { error: insertError } = await supabase
+    .from('parcelas')
+    .insert(parsedParcelas.map(p => ({
+      ...p,
+      pedido_id: order.id,
+      marcenaria_id: marcenaria.id,
+      status: p.status || 'pendente'
+    })))
+
+  if (insertError) {
+    console.error('Erro ao recriar parcelas:', insertError)
+    throw new Error('Pedido criado, mas erro ao gerar parcelas.')
+  }
+
+  console.log(`[ACTIONS/PEDIDOS] Enviando audit log para criação do pedido ${order.id}`)
+  await logAction(supabase, marcenaria.id, 'pedidos', 'INSERT', order.id, { 
+    acao: 'criacao_pedido', 
+    cliente_id: parsedData.cliente_id,
+    valor_total: parsedData.valor_total,
+    parcelas_geradas: parsedParcelas.length 
+  })
+
+  revalidatePath('/dashboard')
+  revalidatePath('/pedidos')
+  revalidatePath('/financeiro')
+  
+  return { success: true, orderId: order.id }
+}
+
 export async function converterParaContrato(pedidoId: string) {
   const supabase = createClient()
   

@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { X, Save } from 'lucide-react'
 import { Cliente, Order } from '@/types/dashboard'
-import { updatePedido } from '@/app/actions/pedidos'
-import { logAction } from '@/lib/audit'
+import { updatePedido, createPedido } from '@/app/actions/pedidos'
 
 interface NewOrderFormProps {
   onClose: () => void
@@ -189,37 +188,13 @@ export function NewOrderForm({ onClose, onSuccess, editingOrder }: NewOrderFormP
         
         if (!result.success) throw new Error('Erro ao atualizar pedido')
       } else {
-        const { data: order, error: orderErr } = await supabase
-          .from('pedidos')
-          .insert({
-            marcenaria_id: marcenaria.id,
-            cliente_id: clienteId,
-            descricao,
-            valor_total: valorTotal,
-            status: 'orcamento'
-          })
-          .select()
-          .single()
-
-        if (orderErr) throw orderErr
-
-        const { error: parcErr } = await supabase.from('parcelas').insert(
-          parcelasToSave.map(p => ({
-            ...p,
-            pedido_id: order.id,
-            marcenaria_id: marcenaria.id,
-            status: 'pendente'
-          }))
-        )
-        if (parcErr) throw parcErr
-
-        await logAction(supabase, marcenaria.id, 'pedidos', 'INSERT', order.id, {
-          acao: 'criacao_pedido',
+        const result = await createPedido({
           cliente_id: clienteId,
           descricao,
-          valor_total: valorTotal,
-          parcelas_geradas: parcelasToSave.length
-        })
+          valor_total: valorTotal
+        }, parcelasToSave)
+        
+        if (!result.success) throw new Error('Erro ao criar pedido.')
       }
 
       onSuccess()
