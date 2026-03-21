@@ -58,6 +58,22 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const url = request.nextUrl.clone()
+  const path = url.pathname
+
+  // 1. Lista de Rotas Públicas (Bypass imediato)
+  const isPublicRoute = 
+    path === '/login' || 
+    path === '/assinatura-vencida' || 
+    path.startsWith('/_next') || 
+    path.startsWith('/api') || 
+    path.startsWith('/assets') ||
+    path.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/)
+
+  if (isPublicRoute) {
+    return response
+  }
+
   if (user) {
     // Buscar perfil do usuário para validar role e assinatura
     const { data: profile } = await supabase
@@ -66,23 +82,24 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const url = request.nextUrl.clone()
-    const path = url.pathname
+    // Debug Logs
+    console.log(`[Middleware] UID: ${user.id} | Role: ${profile?.role} | Status: ${profile?.subscription_status} | Path: ${path}`)
 
-    // 1. Proteção de Rota /admin (Apenas super-admin)
-    if (path.startsWith('/admin')) {
-      if (profile?.role !== 'super-admin') {
-        url.pathname = '/'
-        return NextResponse.redirect(url)
-      }
+    // 2. O "Passe Livre" do Dono (Super Admin vê TUDO)
+    if (profile?.role === 'super-admin') {
+      return response
     }
 
-    // 2. Proteção de Assinatura (Apenas para tenant-admin e user, se não for super-admin)
-    if (profile?.role !== 'super-admin') {
-       if (profile?.subscription_status !== 'active' && path !== '/assinatura-vencida' && !path.startsWith('/_next') && !path.startsWith('/api')) {
-          url.pathname = '/assinatura-vencida'
-          return NextResponse.redirect(url)
-       }
+    // 3. Proteção de Rota /admin (Apenas super-admin - se chegou aqui não é super-admin)
+    if (path.startsWith('/admin')) {
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+
+    // 4. Lógica de Bloqueio de Assinatura (Apenas se NÃO for super-admin)
+    if (profile?.subscription_status !== 'active') {
+       url.pathname = '/assinatura-vencida'
+       return NextResponse.redirect(url)
     }
   }
 
