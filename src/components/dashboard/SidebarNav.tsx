@@ -13,6 +13,13 @@ export function SidebarNav() {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        // Fallback/Bypass imediato por email para o dono
+        if (user.email === 'lucaswelglys@gmail.com') {
+          console.log('Super Admin detected by email bypass')
+          setRole('super-admin')
+          return
+        }
+
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('role')
@@ -24,8 +31,6 @@ export function SidebarNav() {
           setRole(profile.role)
         } else if (error) {
           console.error('Error loading profile in Sidebar:', error)
-          // Tentar fallback se profile falhar (talvez lag no RLS?)
-          // mas o RLS 'authenticated' deve resolver
         }
       }
     }
