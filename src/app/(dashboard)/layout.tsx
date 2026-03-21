@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { Hammer, LayoutDashboard, Users, User, LogOut, Package, TrendingUp, Settings, Activity, Shield } from 'lucide-react'
+import { SidebarNav } from '@/components/dashboard/SidebarNav'
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { getMarcenariaContext } from '@/lib/marcenaria'
@@ -16,80 +16,24 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user?.id)
-    .single()
+  if (!marcenaria) {
+    redirect('/login')
+  }
 
   return (
     <div className="flex h-screen bg-stone-50">
       {/* Sidebar */}
       <aside className="w-64 bg-wood-dark text-white flex flex-col shadow-xl">
         <div className="p-6">
-          <Link href="/" className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div className="bg-white/10 p-2 rounded-lg">
               <Hammer className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">WoodFlow</span>
-          </Link>
+          </div>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-          >
-            <LayoutDashboard className="h-5 w-5" />
-            <span className="font-medium">Dashboard</span>
-          </Link>
-          <Link
-            href="/pedidos"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-          >
-            <Package className="h-5 w-5" />
-            <span className="font-medium">Pedidos</span>
-          </Link>
-          <Link
-            href="/clientes"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-          >
-            <Users className="h-5 w-5" />
-            <span className="font-medium">Clientes</span>
-          </Link>
-          <Link
-            href="/financeiro"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-          >
-            <TrendingUp className="h-5 w-5" />
-            <span className="font-medium">Financeiro</span>
-          </Link>
-          <Link
-            href="/despesas"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-          >
-            <Activity className="h-5 w-5" />
-            <span className="font-medium">Despesas</span>
-          </Link>
-          <Link
-            href="/configuracoes"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-          >
-            <Settings className="h-5 w-5" />
-            <span className="font-medium">Configurações</span>
-          </Link>
-
-          {profile?.role === 'super-admin' && (
-            <Link
-              href="/admin/dashboard"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
-            >
-              <Shield className="h-5 w-5" />
-              <span className="font-medium">Gestão SaaS</span>
-            </Link>
-          )}
-        </nav>
+        <SidebarNav />
 
         <div className="p-4 border-t border-white/5 space-y-1">
           <div className="flex items-center gap-3 px-4 py-3 text-stone-400">
