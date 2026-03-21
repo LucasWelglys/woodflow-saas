@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Hammer, LayoutDashboard, Users, User, LogOut, Package, TrendingUp, Settings, Activity } from 'lucide-react'
+import { Hammer, LayoutDashboard, Users, User, LogOut, Package, TrendingUp, Settings, Activity, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { getMarcenariaContext } from '@/lib/marcenaria'
@@ -15,6 +15,13 @@ export default async function DashboardLayout({
   if (!marcenaria) {
     redirect('/login')
   }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user?.id)
+    .single()
 
   return (
     <div className="flex h-screen bg-stone-50">
@@ -72,6 +79,16 @@ export default async function DashboardLayout({
             <Settings className="h-5 w-5" />
             <span className="font-medium">Configurações</span>
           </Link>
+
+          {profile?.role === 'super-admin' && (
+            <Link
+              href="/admin/dashboard"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group"
+            >
+              <Shield className="h-5 w-5" />
+              <span className="font-medium">Gestão SaaS</span>
+            </Link>
+          )}
         </nav>
 
         <div className="p-4 border-t border-white/5 space-y-1">
