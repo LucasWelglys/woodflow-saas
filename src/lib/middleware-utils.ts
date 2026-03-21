@@ -75,17 +75,25 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user) {
+    // 1.5 Passe Livre por Email (Segurança Extra para o Dono)
+    if (user.email === 'lucaswelglys@gmail.com') {
+      console.log(`[Middleware] Super Admin Bypass por Email: ${user.email}`)
+      return response
+    }
+
     // Buscar perfil do usuário para validar role e assinatura
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('role, subscription_status')
       .eq('id', user.id)
       .single()
 
-    // Debug Logs
-    console.log(`[Middleware] UID: ${user.id} | Role: ${profile?.role} | Status: ${profile?.subscription_status} | Path: ${path}`)
+    // Debug Logs detalhados
+    console.log(`[Middleware] UID: ${user.id} | Email: ${user.email} | Path: ${path}`)
+    console.log(`[Middleware] Profile Result:`, profile)
+    if (error) console.error(`[Middleware] Erro ao buscar perfil:`, error)
 
-    // 2. O "Passe Livre" do Dono (Super Admin vê TUDO)
+    // 2. O "Passe Livre" do Dono (Super Admin vê TUDO via Role)
     if (profile?.role === 'super-admin') {
       return response
     }
@@ -97,7 +105,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // 4. Lógica de Bloqueio de Assinatura (Apenas se NÃO for super-admin)
-    if (profile?.subscription_status !== 'active') {
+    if (profile && profile.subscription_status !== 'active') {
        url.pathname = '/assinatura-vencida'
        return NextResponse.redirect(url)
     }
