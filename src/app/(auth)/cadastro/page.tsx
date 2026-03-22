@@ -19,8 +19,11 @@ export default function SignupPage() {
     setLoading(true)
     setError(null)
 
+    // Sanitização de Email
+    const sanitizedEmail = email.trim().toLowerCase().replace(/\.+$/, '')
+
     const { error } = await supabase.auth.signUp({
-      email,
+      email: sanitizedEmail,
       password,
       options: {
         data: {
@@ -47,7 +50,7 @@ export default function SignupPage() {
           </div>
           <h2 className="text-2xl font-bold text-wood-dark">Verifique seu email</h2>
           <p className="text-stone-600">
-            Enviamos um link de confirmação para <strong>{email}</strong>. Por favor, valide seu acesso para continuar.
+            Enviamos um link de confirmação para <strong>{email.trim().toLowerCase().replace(/\.+$/, '')}</strong>. Por favor, valide seu acesso para continuar.
           </p>
           <div className="mt-6">
             <Link href="/login" className="text-wood-mid font-medium hover:underline">
