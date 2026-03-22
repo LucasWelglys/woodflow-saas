@@ -36,6 +36,28 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      const newUser = (await supabase.auth.getUser()).data.user
+      
+      if (newUser) {
+        // Criamos a marcenaria para o novo usuário
+        const { data: newMarcenaria, error: marcError } = await supabase
+          .from('marcenarias')
+          .insert({
+            nome: name,
+            dono_id: newUser.id
+          })
+          .select()
+          .single()
+
+        if (!marcError && newMarcenaria) {
+          // Atualizamos o perfil com o tenant_id da nova marcenaria
+          await supabase
+            .from('profiles')
+            .update({ tenant_id: newMarcenaria.id })
+            .eq('id', newUser.id)
+        }
+      }
+
       setSuccess(true)
       setLoading(false)
     }

@@ -10,12 +10,12 @@ export async function getMarcenariaContext() {
     // Checamos metadados do auth ou buscamos o perfil
     const userRole = user.app_metadata?.role || user.user_metadata?.role
 
-    // Se for Super Admin, tentamos pegar a primeira marcenaria ou a dele
+// Se for Super Admin, tentamos pegar a marcenaria dele (dono_id) ou tenant_id
     if (userRole === 'super-admin') {
         const { data: adminMarcenaria } = await supabase
             .from('marcenarias')
             .select('*')
-            .limit(1)
+            .eq('dono_id', user.id)
             .maybeSingle()
         
         if (adminMarcenaria) return adminMarcenaria
@@ -33,7 +33,7 @@ export async function getMarcenariaContext() {
         const { data: adminMarcenaria } = await supabase
             .from('marcenarias')
             .select('*')
-            .limit(1)
+            .eq('dono_id', user.id)
             .maybeSingle()
         
         if (adminMarcenaria) return adminMarcenaria
