@@ -11,7 +11,9 @@ export default async function DashboardLayout({
 }) {
   const supabase = createClient()
   const marcenaria = await getMarcenariaContext()
-
+  
+  // LOG DE COMPARAÇÃO / DEBUG
+  console.log("DEBUG CONTEXT (Marcenaria):", marcenaria)
   if (!marcenaria) {
     return (
       <div className="flex h-screen items-center justify-center bg-stone-50">
