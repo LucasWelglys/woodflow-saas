@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Governance (Core Intelligence & Planning)
+CORE-INTELLIGENCE/
+mcp-servers/
+skills/
+*.md
+!README.md
+tools/n8n-mcp/
