@@ -84,7 +84,7 @@ export async function updateSession(request: NextRequest) {
     // Buscar perfil do usuário para validar role e assinatura
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('role, subscription_status')
+      .select('role, subscription_status, tenant_id')
       .eq('id', user.id)
       .single()
 
@@ -98,14 +98,35 @@ export async function updateSession(request: NextRequest) {
       return response
     }
 
-    // 3. Proteção de Rota /admin (Apenas super-admin - se chegou aqui não é super-admin)
+    // 3. Validação de Status da Marcenaria (Kill Switch & God Mode)
+    // Buscamos o status da marcenaria vinculada
+    const { data: marcenaria } = await supabase
+      .from('marcenarias')
+      .select('status_conta, acesso_temporario_ate')
+      .eq('id', profile?.tenant_id)
+      .single()
+
+    const now = new Date()
+    const isTempAccessActive = marcenaria?.acesso_temporario_ate 
+      ? new Date(marcenaria.acesso_temporario_ate) > now 
+      : false
+
+    // Se a conta estiver bloqueada ou inadimplente, e NÃO houver acesso temporário
+    const isBlocked = marcenaria?.status_conta === 'blocked' || marcenaria?.status_conta === 'past_due'
+    
+    if (isBlocked && !isTempAccessActive && !path.startsWith('/status')) {
+      url.pathname = '/status/bloqueado'
+      return NextResponse.redirect(url)
+    }
+
+    // 4. Proteção de Rota /admin (Apenas super-admin)
     if (path.startsWith('/admin')) {
       url.pathname = '/'
       return NextResponse.redirect(url)
     }
 
-    // 4. Lógica de Bloqueio de Assinatura (Apenas se NÃO for super-admin)
-    if (profile && profile.subscription_status !== 'active') {
+    // 5. Lógica de Bloqueio de Assinatura (Legacy/Profile - Backup)
+    if (profile && profile.subscription_status !== 'active' && !path.startsWith('/status')) {
        url.pathname = '/assinatura-vencida'
        return NextResponse.redirect(url)
     }
