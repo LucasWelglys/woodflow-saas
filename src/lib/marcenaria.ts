@@ -6,37 +6,60 @@ export async function getMarcenariaContext() {
     
     if (!user) return null
 
-    // 1. Buscamos o perfil para obter o tenant_id
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('tenant_id')
-        .eq('id', user.id)
-        .single()
+    // 1. Verificação de Bypass para Super Admin
+    // Checamos metadados do auth ou buscamos o perfil
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
 
-    if (profileError || !profile?.tenant_id) {
-        console.error('Erro ao buscar perfil ou tenant_id:', profileError)
-        
-        // Fallback: Tenta buscar onde ele é o dono (comportamento original)
-        const { data: ownedMarcenaria } = await supabase
+    // Se for Super Admin, tentamos pegar a primeira marcenaria ou a dele
+    if (userRole === 'super-admin') {
+        const { data: adminMarcenaria } = await supabase
             .from('marcenarias')
             .select('*')
-            .eq('dono_id', user.id)
+            .limit(1)
             .maybeSingle()
-            
-        return ownedMarcenaria || null
+        
+        if (adminMarcenaria) return adminMarcenaria
     }
 
-    // 2. Buscamos a marcenaria vinculada ao tenant_id
-    const { data: marcenaria, error: marcError } = await supabase
+    // 2. Buscamos o perfil para usuários comuns
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('tenant_id, role')
+        .eq('id', user.id)
+        .maybeSingle()
+
+    // Se o perfil indicar super-admin (backup do check anterior)
+    if (profile?.role === 'super-admin') {
+        const { data: adminMarcenaria } = await supabase
+            .from('marcenarias')
+            .select('*')
+            .limit(1)
+            .maybeSingle()
+        
+        if (adminMarcenaria) return adminMarcenaria
+    }
+
+    // 3. Lógica para Membros (tenant_id)
+    if (profile?.tenant_id) {
+        const { data: marcenaria, error: marcError } = await supabase
+            .from('marcenarias')
+            .select('*')
+            .eq('id', profile.tenant_id)
+            .maybeSingle()
+
+        if (marcenaria) return marcenaria
+    }
+
+    // 4. Fallback Final: Tenta buscar onde ele é o dono (comportamento para proprietários)
+    const { data: ownedMarcenaria, error: fallbackError } = await supabase
         .from('marcenarias')
         .select('*')
-        .eq('id', profile.tenant_id)
-        .single()
+        .eq('dono_id', user.id)
+        .maybeSingle()
 
-    if (marcError) {
-        console.error('Erro ao buscar contexto da marcenaria por tenant_id:', marcError)
-        return null
+    if (fallbackError) {
+        console.error('Erro crítico no fallback de marcenaria:', fallbackError)
     }
-
-    return marcenaria
+            
+    return ownedMarcenaria || null
 }
