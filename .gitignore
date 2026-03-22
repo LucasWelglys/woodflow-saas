@@ -41,4 +41,6 @@ mcp-servers/
 skills/
 *.md
 !README.md
+*.log
+tmp_*
 tools/n8n-mcp/
