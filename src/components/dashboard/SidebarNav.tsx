@@ -61,7 +61,7 @@ export function SidebarNav() {
 
       {role === 'super-admin' && (
         <Link
-          href="/admin/dashboard"
+          href="/admin"
           className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-stone-300 hover:text-white group border border-dashed border-white/10"
         >
           <Shield className="h-5 w-5 text-indigo-400" />

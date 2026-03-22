@@ -50,15 +50,23 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-3 px-4 py-3 text-stone-400">
             <User className="h-5 w-5" />
             <div className="flex flex-col overflow-hidden">
-                <span className="text-sm truncate font-bold text-white">{marcenaria.nome}</span>
-                <span className="text-[10px] truncate text-stone-500 font-medium">{marcenaria.email_contato}</span>
+                <span className="text-sm truncate font-bold text-white">
+                  {marcenaria.dono_id === (await supabase.auth.getUser()).data.user?.id && marcenaria.nome?.includes("Lucas") 
+                    ? "Portal do Administrador" 
+                    : marcenaria.nome}
+                </span>
+                <span className="text-[10px] truncate text-stone-500 font-medium">
+                  {marcenaria.dono_id === (await supabase.auth.getUser()).data.user?.id && marcenaria.nome?.includes("Lucas")
+                    ? "Gestão WoodFlow SaaS"
+                    : marcenaria.email_contato}
+                </span>
             </div>
           </div>
           {/* AQUI ESTÁ A CORREÇÃO DO BOTÃO SAIR */}
           <form action="/api/auth/signout" method="post">
             <button
-              type="submit"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-stone-400 hover:text-red-400 transition-colors"
+               type="submit"
+               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-stone-400 hover:text-red-400 transition-colors"
             >
               <LogOut className="h-5 w-5" />
               <span className="font-medium">Sair</span>
