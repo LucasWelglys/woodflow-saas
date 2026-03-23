@@ -18,20 +18,20 @@ interface LeadsTableProps {
 
 export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTableProps) {
   return (
-    <div className="bg-stone-900 border border-stone-800 rounded-3xl overflow-hidden shadow-2xl">
+    <div className="bg-[#262626] border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-stone-800 bg-stone-900/50">
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Marcenaria</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Contato</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Status</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Plano</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Cadastro</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-right">Ações</th>
+            <tr className="border-b border-white/5 bg-black/20">
+              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Marcenaria</th>
+              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Contato</th>
+              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Status</th>
+              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Plano</th>
+              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Cadastro</th>
+              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-800/50">
+          <tbody className="divide-y divide-white/5">
             {data.map((item) => (
               <tr key={item.id} className="hover:bg-stone-800/30 transition-colors group">
                 <td className="px-6 py-4">

@@ -25,16 +25,16 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
     : false
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-stone-950 w-full max-w-2xl rounded-[32px] shadow-2xl border border-stone-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+      <div className="bg-[#1A1A1A] w-full max-w-2xl rounded-[40px] shadow-2xl border border-white/10 overflow-hidden animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="px-8 py-6 border-b border-stone-900 bg-stone-900/30 flex justify-between items-center">
+        <div className="px-10 py-8 border-b border-white/5 bg-black/20 flex justify-between items-center">
           <div>
-            <h3 className="text-xl font-black text-stone-100 tracking-tight">
-              Gerenciar Marcenaria
+            <h3 className="text-2xl font-black text-stone-100 tracking-tighter uppercase italic">
+              Detalhes de <span className="text-amber-500">Marcenaria</span>
             </h3>
-            <p className="text-stone-500 text-[10px] font-black uppercase tracking-widest mt-1">
-              Painel de Controle SaaS
+            <p className="text-stone-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
+              WoodFlow SaaS Command
             </p>
           </div>
           <button onClick={onClose} className="p-2 bg-stone-900 hover:bg-stone-800 rounded-full transition-all border border-stone-800">

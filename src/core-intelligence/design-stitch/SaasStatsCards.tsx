@@ -37,15 +37,20 @@ export function SaasStatsCards({ totalSubscribers, totalLeads, mrr }: StatsCards
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       {stats.map((stat, idx) => (
-        <div key={idx} className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow-sm hover:border-stone-700 transition-all group">
-          <div className="flex items-center justify-between mb-4">
-            <div className={`p-3 rounded-xl ${stat.bg} group-hover:scale-110 transition-transform`}>
-              <stat.icon className={`h-6 w-6 ${stat.color}`} />
-            </div>
-            <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{stat.suffix}</span>
+        <div key={idx} className="bg-[#262626] border border-stone-800/50 rounded-3xl p-8 shadow-xl hover:border-amber-500/30 transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+            <stat.icon size={80} />
           </div>
-          <p className="text-stone-400 text-sm font-medium">{stat.label}</p>
-          <h3 className="text-2xl font-black text-stone-100 tracking-tight mt-1">{stat.value}</h3>
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <div className={`p-4 rounded-2xl ${stat.bg} group-hover:scale-110 transition-transform shadow-lg`}>
+              <stat.icon className={`h-7 w-7 ${stat.color}`} />
+            </div>
+            <span className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em]">{stat.suffix}</span>
+          </div>
+          <div className="relative z-10">
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-wider">{stat.label}</p>
+            <h3 className="text-3xl font-black text-stone-100 tracking-tighter mt-1">{stat.value}</h3>
+          </div>
         </div>
       ))}
     </div>
