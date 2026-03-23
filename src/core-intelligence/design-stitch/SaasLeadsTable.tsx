@@ -18,11 +18,11 @@ interface LeadsTableProps {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const configs: Record<string, { bg: string, text: string, label: string }> = {
-    active: { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'ACTIVE' },
-    inactive: { bg: 'bg-red-50', text: 'text-red-500', label: 'INACTIVE' },
-    PENDING_APPROVAL: { bg: 'bg-amber-50', text: 'text-amber-600', label: 'PENDING' },
-    blocked: { bg: 'bg-red-50', text: 'text-red-500', label: 'BLOCKED' },
-    past_due: { bg: 'bg-orange-50', text: 'text-orange-600', label: 'PAST DUE' }
+    active: { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'ATIVO' },
+    inactive: { bg: 'bg-red-50', text: 'text-red-500', label: 'INATIVO' },
+    PENDING_APPROVAL: { bg: 'bg-amber-50', text: 'text-amber-600', label: 'PENDENTE' },
+    blocked: { bg: 'bg-red-50', text: 'text-red-500', label: 'BLOQUEADO' },
+    past_due: { bg: 'bg-orange-50', text: 'text-orange-600', label: 'EXPIRADO' }
   }
 
   const config = configs[status] || configs['PENDING_APPROVAL']
@@ -76,7 +76,7 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
                   </span>
                 </td>
                 <td className="px-8 py-6">
-                  <span className="text-xs text-stone-500 font-medium">Just now</span>
+                  <span className="text-xs text-stone-500 font-medium">Agora mesmo</span>
                 </td>
                 <td className="px-8 py-6">
                   <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">

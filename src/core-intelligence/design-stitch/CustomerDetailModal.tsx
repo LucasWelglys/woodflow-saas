@@ -73,7 +73,10 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
                 marcenaria.status_conta === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-600' :
                 'bg-red-50 text-red-500'
               }`}>
-                {marcenaria.status_conta.toUpperCase()}
+                {marcenaria.status_conta === 'active' ? 'ATIVO' : 
+                 marcenaria.status_conta === 'PENDING_APPROVAL' ? 'PENDENTE' : 
+                 marcenaria.status_conta === 'blocked' ? 'BLOQUEADO' : 
+                 marcenaria.status_conta.toUpperCase()}
               </span>
             </div>
             

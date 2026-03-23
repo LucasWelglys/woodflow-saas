@@ -90,9 +90,9 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
                   value={formData.plano}
                   onChange={(e) => setFormData({ ...formData, plano: e.target.value })}
                 >
-                  <option value="Pro Architect">Pro Architect</option>
-                  <option value="Enterprise Architect">Enterprise Architect</option>
-                  <option value="Legacy">Legacy Plan</option>
+                  <option value="Plano Pro">Plano Pro</option>
+                  <option value="Plano Enterprise">Plano Enterprise</option>
+                  <option value="Plano Legacy">Plano Legacy</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
               </div>
@@ -105,9 +105,9 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="Pendente">Pendente</option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
               </div>
@@ -119,7 +119,7 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
             <button
               type="button"
               onClick={() => setFormData({ ...formData, liberarAcesso: !formData.liberarAcesso })}
-              className={`mt-1 relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.liberarAcesso ? 'bg-blue-900' : 'bg-stone-200'}`}
+              className={`mt-1 relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.liberarAcesso ? 'bg-blue-600' : 'bg-stone-200'}`}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.liberarAcesso ? 'translate-x-5' : 'translate-x-0'}`}
