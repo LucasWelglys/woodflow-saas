@@ -175,10 +175,10 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
                 </div>
               </div>
 
-              {/* HIGH CONTRAST BUTTON FIXED */}
+              {/* HIGH CONTRAST BUTTON FIXED - SOLID BLUE */}
               <button 
                 onClick={handleSaveAccess}
-                className="w-full bg-[#1A3A8A] hover:bg-blue-900 text-white py-4 rounded-xl font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-900/40 active:scale-[0.98] border border-blue-800"
+                className="w-full bg-blue-700 hover:bg-blue-800 text-white py-4 rounded-xl font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-700/20"
               >
                 <Key className="h-4 w-4" />
                 LIBERAR ACESSO TEMPORÁRIO
