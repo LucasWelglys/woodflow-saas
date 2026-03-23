@@ -1,5 +1,5 @@
-import { X, ShieldCheck, Clock, Key, Edit2, Calendar, Ban } from 'lucide-react'
-import { useState } from 'react'
+import { X, ShieldCheck, Clock, Key, Edit2, Calendar, Ban, Check, Save } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 interface Marcenaria {
   id: string
@@ -19,18 +19,40 @@ interface ModalProps {
 
 export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdateStatus }: ModalProps) {
   const [tempType, setTempType] = useState<'hora' | 'dia' | 'mes'>('hora')
+  const [isEditing, setIsEditing] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    nome: marcenaria.nome,
+    whatsapp: marcenaria.whatsapp || ''
+  })
+  
+  // Expiration Logic
+  const [expirationDate, setExpirationDate] = useState('')
+
+  useEffect(() => {
+    if (marcenaria.acesso_temporario_ate) {
+      const date = new Date(marcenaria.acesso_temporario_ate)
+      // Format to YYYY-MM-DDThh:mm
+      const formatted = date.toISOString().slice(0, 16)
+      setExpirationDate(formatted)
+    } else {
+      // Default to 24h from now
+      const date = new Date()
+      date.setHours(date.getHours() + 24)
+      setExpirationDate(date.toISOString().slice(0, 16))
+    }
+  }, [marcenaria.acesso_temporario_ate])
+
+  const handleSaveAccess = () => {
+    const end = new Date(expirationDate)
+    const start = new Date()
+    const diffMs = end.getTime() - start.getTime()
+    const diffHours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)))
+    onSaveAccess(marcenaria.id, diffHours)
+  }
 
   const isTempActive = marcenaria.acesso_temporario_ate 
     ? new Date(marcenaria.acesso_temporario_ate) > new Date()
     : false
-
-  const statusMap: Record<string, { label: string, color: string }> = {
-    active: { label: 'Ativo e Verificado', color: 'text-emerald-500' },
-    PENDING_APPROVAL: { label: 'Pendente de Aprovação', color: 'text-amber-500' },
-    blocked: { label: 'Acesso Bloqueado', color: 'text-red-500' }
-  }
-
-  const currentStatus = statusMap[marcenaria.status_conta] || { label: 'Status Desconhecido', color: 'text-stone-400' }
 
   return (
     <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
@@ -61,7 +83,9 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
                 <p className="text-sm font-bold text-stone-900">Status da Conta</p>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full bg-emerald-500`} />
-                  <span className={`text-[11px] font-medium text-stone-500`}>{currentStatus.label}</span>
+                  <span className={`text-[11px] font-medium text-stone-500`}>
+                    {marcenaria.status_conta === 'active' ? 'Ativo e Verificado' : 'Acesso Administrador'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -74,15 +98,23 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
             </button>
           </div>
 
-          {/* Info Grid - Shrunk Fonts */}
+          {/* Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-stone-50/50 p-6 rounded-2xl space-y-1">
               <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">NOME COMPLETO</p>
-              <p className="text-xs font-bold text-stone-900 truncate uppercase">{marcenaria.nome}</p>
+              {isEditing ? (
+                <input 
+                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold w-full outline-none focus:border-blue-500"
+                  value={editFormData.nome}
+                  onChange={e => setEditFormData({...editFormData, nome: e.target.value})}
+                />
+              ) : (
+                <p className="text-xs font-bold text-stone-900 truncate uppercase">{marcenaria.nome}</p>
+              )}
             </div>
             <div className="bg-stone-50/50 p-6 rounded-2xl space-y-1">
               <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">E-MAIL CORPORATIVO</p>
-              <p className="text-xs font-bold text-stone-900 truncate">alexandre@empresa.com</p>
+              <p className="text-xs font-bold text-stone-900 truncate opacity-60">carregando...</p>
             </div>
             <div className="bg-stone-50/50 p-6 rounded-2xl space-y-1 relative overflow-hidden">
               <div className="absolute left-0 top-3 bottom-3 w-[4px] bg-blue-600 rounded-r-full" />
@@ -93,7 +125,7 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
             </div>
           </div>
 
-          {/* Temporary Access Control - Redone like Image 2 */}
+          {/* Temporary Access Control - Functional */}
           <div className="space-y-5">
             <div className="flex items-center gap-2.5">
               <Clock className="h-5 w-5 text-stone-800" />
@@ -101,14 +133,21 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
             </div>
 
             <div className="bg-stone-50 rounded-3xl p-10 border border-stone-100/50 space-y-8">
-              {/* Tab Selector Segmented - High Fidelity */}
+              {/* Tab Selector Segmented */}
               <div className="flex p-1 bg-stone-200/50 rounded-xl max-w-sm">
                 {(['Por Hora', 'Por Dia', 'Por Mes'] as const).map((label) => {
                   const type = label.includes('Hora') ? 'hora' : label.includes('Dia') ? 'dia' : 'mes'
                   return (
                     <button
                       key={label}
-                      onClick={() => setTempType(type)}
+                      onClick={() => {
+                        setTempType(type)
+                        const now = new Date()
+                        if (type === 'hora') now.setHours(now.getHours() + 24)
+                        if (type === 'dia') now.setDate(now.getDate() + 7)
+                        if (type === 'mes') now.setMonth(now.getMonth() + 1)
+                        setExpirationDate(now.toISOString().slice(0, 16))
+                      }}
                       className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${
                         tempType === type ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
                       }`}
@@ -119,25 +158,27 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
                 })}
               </div>
 
-              {/* Data Input Box */}
+              {/* Data Input Box - REAL INPUT NOW */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">DATA/HORA DE TÉRMINO</label>
-                <div className="flex items-center justify-between bg-white border border-stone-200/60 rounded-xl px-5 py-4 shadow-sm group hover:border-blue-200 transition-all">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-stone-400 group-hover:text-blue-500 transition-colors" />
-                    <span className="text-xs font-bold text-stone-900">
-                      {isTempActive 
-                        ? new Date(marcenaria.acesso_temporario_ate!).toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                        : 'Defina o período acima'}
-                    </span>
+                <div className="flex items-center justify-between bg-white border border-stone-200 rounded-xl px-5 py-3 shadow-sm group hover:border-blue-400 transition-all">
+                  <div className="flex items-center gap-3 w-full">
+                    <Calendar className="h-5 w-5 text-stone-400 group-hover:text-blue-600 transition-colors" />
+                    <input 
+                      type="datetime-local"
+                      className="bg-transparent text-xs font-bold text-stone-900 outline-none w-full"
+                      value={expirationDate}
+                      onChange={e => setExpirationDate(e.target.value)}
+                    />
                   </div>
                   <Clock size={14} className="text-stone-300" />
                 </div>
               </div>
 
+              {/* HIGH CONTRAST BUTTON FIXED */}
               <button 
-                onClick={() => onSaveAccess(marcenaria.id, 24)}
-                className="w-full bg-blue-800 hover:bg-blue-900 text-white py-4 rounded-xl font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-900/20 active:scale-[0.98]"
+                onClick={handleSaveAccess}
+                className="w-full bg-[#1A3A8A] hover:bg-blue-900 text-white py-4 rounded-xl font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-900/40 active:scale-[0.98] border border-blue-800"
               >
                 <Key className="h-4 w-4" />
                 LIBERAR ACESSO TEMPORÁRIO
@@ -147,13 +188,25 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
 
           {/* Footer Actions */}
           <div className="flex items-center justify-between pt-4">
-            <button className="flex items-center gap-2 text-xs font-bold text-blue-700 hover:text-blue-900 transition-colors">
-              <Edit2 size={14} />
-              Editar Perfil
+            <button 
+              onClick={() => setIsEditing(!isEditing)}
+              className="flex items-center gap-2 text-xs font-bold text-blue-700 hover:text-blue-900 transition-colors"
+            >
+              {isEditing ? (
+                <>
+                  <Save size={14} />
+                  Salvar Perfil
+                </>
+              ) : (
+                <>
+                  <Edit2 size={14} />
+                  Editar Perfil
+                </>
+              )}
             </button>
             <button 
               onClick={onClose}
-              className="px-8 py-2.5 bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95"
+              className="px-8 py-2.5 bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95 shadow-sm"
             >
               Fechar
             </button>
