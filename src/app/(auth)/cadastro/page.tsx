@@ -38,6 +38,7 @@ export default function SignupPage() {
       options: {
         data: {
           full_name: name,
+          whatsapp: whatsapp,
         },
       },
     })
@@ -46,30 +47,8 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      const newUser = (await supabase.auth.getUser()).data.user
-      
-      if (newUser) {
-        // Criamos a marcenaria para o novo usuário
-        const { data: newMarcenaria, error: marcError } = await supabase
-          .from('marcenarias')
-          .insert({
-            nome: name,
-            dono_id: newUser.id,
-            whatsapp,
-            status_conta: 'PENDING_APPROVAL'
-          })
-          .select()
-          .single()
-
-        if (!marcError && newMarcenaria) {
-          // Atualizamos o perfil com o tenant_id da nova marcenaria
-          await supabase
-            .from('profiles')
-            .update({ tenant_id: newMarcenaria.id })
-            .eq('id', newUser.id)
-        }
-      }
-
+      // A criação da marcenaria e do perfil agora é tratada automaticamente 
+      // pela Trigger 'handle_new_user' no banco de dados.
       setSuccess(true)
       setLoading(false)
     }
