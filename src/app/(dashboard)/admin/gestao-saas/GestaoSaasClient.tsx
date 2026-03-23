@@ -48,16 +48,16 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
   }
 
   return (
-    <div className="min-h-screen bg-[#1A1A1A] p-6 md:p-12 max-w-[1600px] mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      {/* Header com Estilo WoodFlow Dark Premium */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-12 border-b border-white/5">
+    <div className="max-w-[1600px] mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      {/* Header com Estilo WoodFlow Organico */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-12 border-b border-stone-200">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
             <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
             <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em]">SaaS Command Center</span>
           </div>
-          <h1 className="text-6xl font-black text-stone-100 tracking-tighter uppercase italic leading-none">
-            Gestão <span className="text-amber-500 underline decoration-stone-800 underline-offset-[12px]">SaaS</span>
+          <h1 className="text-6xl font-black text-stone-900 tracking-tighter uppercase italic leading-none">
+            Gestão <span className="text-amber-500 underline decoration-stone-200 underline-offset-[12px]">SaaS</span>
           </h1>
           <p className="text-stone-500 text-sm font-medium max-w-lg leading-relaxed">
             Controle total da plataforma WoodFlow. Visualize métricas, gerencie acessos e tome decisões críticas em tempo real.
