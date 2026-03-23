@@ -3,10 +3,13 @@ import { Lock, Edit3, Trash2, Users, UserPlus, TrendingUp } from 'lucide-react'
 interface Lead {
   id: string
   nome: string
+  nome_dono?: string
+  email_contato: string | null
   whatsapp: string | null
   status_conta: string
   plano_atual: string
   created_at: string
+  updated_at: string
 }
 
 interface LeadsTableProps {
@@ -56,13 +59,16 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-xs shadow-sm">
-                      {item.nome?.substring(0, 2).toUpperCase() || 'WT'}
+                      {item.nome_dono?.substring(0, 2).toUpperCase() || item.nome?.substring(0, 2).toUpperCase() || 'WT'}
                     </div>
-                    <span className="text-sm font-bold text-stone-900 leading-none">{item.nome}</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-bold text-stone-900 leading-none">{item.nome}</span>
+                      <span className="text-[10px] font-medium text-blue-600/60 uppercase tracking-tighter">Prop: {item.nome_dono}</span>
+                    </div>
                   </div>
                 </td>
                 <td className="px-8 py-6">
-                  <span className="text-xs text-stone-500 font-medium">contato@exemplo.com</span>
+                  <span className="text-xs text-stone-500 font-medium">{item.email_contato || 'N/A'}</span>
                 </td>
                 <td className="px-8 py-6">
                   <StatusBadge status={item.status_conta} />
@@ -76,7 +82,9 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
                   </span>
                 </td>
                 <td className="px-8 py-6">
-                  <span className="text-xs text-stone-500 font-medium">Agora mesmo</span>
+                  <span className="text-xs text-stone-500 font-medium">
+                    {new Date(item.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  </span>
                 </td>
                 <td className="px-8 py-6">
                   <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">

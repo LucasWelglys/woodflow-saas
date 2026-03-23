@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 interface Marcenaria {
   id: string
   nome: string
+  nome_dono?: string
+  email_contato: string | null
   whatsapp: string | null
   status_conta: string
   plano_atual: string
@@ -13,7 +15,7 @@ interface Marcenaria {
 interface ModalProps {
   marcenaria: Marcenaria
   onClose: () => void
-  onSaveAccess: (id: string, hours: number) => void
+  onSaveAccess: (id: string, dateIso: string) => void
   onUpdateStatus: (id: string, status: string) => void
 }
 
@@ -44,10 +46,7 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
 
   const handleSaveAccess = () => {
     const end = new Date(expirationDate)
-    const start = new Date()
-    const diffMs = end.getTime() - start.getTime()
-    const diffHours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)))
-    onSaveAccess(marcenaria.id, diffHours)
+    onSaveAccess(marcenaria.id, end.toISOString())
   }
 
   const isTempActive = marcenaria.acesso_temporario_ate 
@@ -114,7 +113,7 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
             </div>
             <div className="bg-stone-50/50 p-6 rounded-2xl space-y-1">
               <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest">E-MAIL CORPORATIVO</p>
-              <p className="text-xs font-bold text-stone-900 truncate opacity-60">carregando...</p>
+              <p className="text-xs font-bold text-stone-900 truncate">{marcenaria.email_contato || 'Não informado'}</p>
             </div>
             <div className="bg-stone-50/50 p-6 rounded-2xl space-y-1 relative overflow-hidden">
               <div className="absolute left-0 top-3 bottom-3 w-[4px] bg-blue-600 rounded-r-full" />

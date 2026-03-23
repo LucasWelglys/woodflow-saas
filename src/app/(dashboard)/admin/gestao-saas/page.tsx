@@ -10,16 +10,27 @@ export default async function GestaoSaasPage() {
     redirect('/')
   }
 
-  // Super-Admin Power: Buscar TODAS as marcenarias ignorando filtros de tenant
+  // Super-Admin Power: Buscar TODAS as marcenarias com dados do dono
   const { data: marcenarias, error } = await supabase
     .from('marcenarias')
-    .select('*')
+    .select(`
+      *,
+      profiles:dono_id (
+        full_name
+      )
+    `)
     .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Erro ao buscar marcenarias:', error)
-    return <div>Erro ao carregar dados do painel SaaS.</div>
+    return <div className="p-8 text-red-500 font-bold bg-red-50 rounded-xl border border-red-100 m-4">Erro ao carregar dados do painel SaaS: {error.message}</div>
   }
 
-  return <GestaoSaasClient initialData={marcenarias || []} />
+  // Transformar os dados para o formato esperado pelo client
+  const transformedData = (marcenarias || []).map(m => ({
+    ...m,
+    nome_dono: (m as any).profiles?.full_name || 'Sem Nome'
+  }))
+
+  return <GestaoSaasClient initialData={transformedData} />
 }

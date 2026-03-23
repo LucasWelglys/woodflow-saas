@@ -26,7 +26,7 @@ export async function toggleMarcenariaStatus(id: string, newStatus: string) {
   return { success: true }
 }
 
-export async function grantTemporaryAccess(id: string, hours: number) {
+export async function grantTemporaryAccess(id: string, dateIso: string) {
   const supabase = createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -34,12 +34,9 @@ export async function grantTemporaryAccess(id: string, hours: number) {
     return { success: false, error: 'Não autorizado' }
   }
 
-  const expiration = new Date()
-  expiration.setHours(expiration.getHours() + hours)
-
   const { data, error } = await supabase
     .from('marcenarias')
-    .update({ acesso_temporario_ate: expiration.toISOString() })
+    .update({ acesso_temporario_ate: dateIso })
     .eq('id', id)
     .select()
     .single()

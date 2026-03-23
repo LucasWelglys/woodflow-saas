@@ -12,10 +12,13 @@ import { UserPlus } from 'lucide-react'
 interface Marcenaria {
   id: string
   nome: string
+  nome_dono?: string
+  email_contato: string | null
   whatsapp: string | null
   status_conta: string
   plano_atual: string
   created_at: string
+  updated_at: string
   acesso_temporario_ate?: string | null
 }
 
@@ -26,9 +29,9 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
   const router = useRouter()
 
   // KPIs Calculations
-  const totalSubscribers = initialData.filter(m => m.status_conta === 'active' || m.status_conta === 'past_due').length
-  const totalLeads = initialData.filter(m => m.status_conta === 'PENDING_APPROVAL').length
-  const mrrTotal = initialData.filter(m => m.status_conta === 'active').length * 150 // Mocked value
+  const totalSubscribers = initialData.filter(m => m.status_conta === 'active').length
+  const totalRegistered = initialData.length
+  const mrrTotal = totalSubscribers * 150 // Mocked value $150 per active tenant
 
   const onUpdateStatus = async (id: string, status: string) => {
     setIsUpdating(true)
@@ -40,9 +43,9 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
     setIsUpdating(false)
   }
 
-  const onSaveAccess = async (id: string, hours: number) => {
+  const onSaveAccess = async (id: string, dateIso: string) => {
     setIsUpdating(true)
-    const res = await grantTemporaryAccess(id, hours)
+    const res = await grantTemporaryAccess(id, dateIso)
     if (res.success) {
       router.refresh()
       setSelectedMarcenaria(null)
@@ -84,7 +87,7 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
 
       <SaasStatsCards 
         totalSubscribers={totalSubscribers} 
-        totalLeads={totalLeads} 
+        totalLeads={totalRegistered} 
         mrr={mrrTotal} 
       />
 
