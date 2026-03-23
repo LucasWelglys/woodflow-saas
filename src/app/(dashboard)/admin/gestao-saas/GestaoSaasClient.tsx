@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { SaasStatsCards } from '@/core-intelligence/design-stitch/SaasStatsCards'
 import { SaasLeadsTable } from '@/core-intelligence/design-stitch/SaasLeadsTable'
 import { CustomerDetailModal } from '@/core-intelligence/design-stitch/CustomerDetailModal'
+import { NewCustomerModal } from '@/core-intelligence/design-stitch/NewCustomerModal'
 import { toggleMarcenariaStatus, grantTemporaryAccess } from '@/app/actions/admin-actions'
 import { useRouter } from 'next/navigation'
 import { UserPlus } from 'lucide-react'
@@ -20,6 +21,7 @@ interface Marcenaria {
 
 export default function GestaoSaasClient({ initialData }: { initialData: Marcenaria[] }) {
   const [selectedMarcenaria, setSelectedMarcenaria] = useState<Marcenaria | null>(null)
+  const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const router = useRouter()
 
@@ -48,6 +50,16 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
     setIsUpdating(false)
   }
 
+  const handleCreateCustomer = async (data: any) => {
+    setIsUpdating(true)
+    // Placeholder for actual creation logic
+    console.log('Creating customer:', data)
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setIsNewCustomerModalOpen(false)
+    setIsUpdating(false)
+    router.refresh()
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       {/* Header Estilo Reference Design */}
@@ -61,7 +73,10 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
           </p>
         </div>
         
-        <button className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95">
+        <button 
+          onClick={() => setIsNewCustomerModalOpen(true)}
+          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
+        >
           <UserPlus className="h-4 w-4" />
           + Novo Cliente
         </button>
@@ -98,6 +113,14 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
           onClose={() => setSelectedMarcenaria(null)}
           onUpdateStatus={onUpdateStatus}
           onSaveAccess={onSaveAccess}
+        />
+      )}
+
+      {isNewCustomerModalOpen && (
+        <NewCustomerModal 
+          onClose={() => setIsNewCustomerModalOpen(false)}
+          onCreate={handleCreateCustomer}
+          isSubmitting={isUpdating}
         />
       )}
 
