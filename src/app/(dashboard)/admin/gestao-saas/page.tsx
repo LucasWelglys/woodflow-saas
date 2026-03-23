@@ -15,7 +15,7 @@ export default async function GestaoSaasPage() {
     .from('marcenarias')
     .select(`
       *,
-      profiles(full_name)
+      profiles!fk_marcenaria_dono(full_name)
     `)
     .order('created_at', { ascending: false })
 
