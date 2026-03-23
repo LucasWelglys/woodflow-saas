@@ -25,46 +25,46 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
     : false
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1A1A1A] w-full max-w-2xl rounded-[40px] shadow-2xl border border-white/10 overflow-hidden animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl border border-stone-200 overflow-hidden animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-white/5 bg-black/20 flex justify-between items-center">
+        <div className="px-10 py-8 border-b border-stone-100 bg-stone-50 flex justify-between items-center">
           <div>
-            <h3 className="text-2xl font-black text-stone-100 tracking-tighter uppercase italic">
+            <h3 className="text-2xl font-black text-stone-900 tracking-tighter uppercase italic">
               Detalhes de <span className="text-amber-500">Marcenaria</span>
             </h3>
-            <p className="text-stone-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
+            <p className="text-stone-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
               WoodFlow SaaS Command
             </p>
           </div>
-          <button onClick={onClose} className="p-2 bg-stone-900 hover:bg-stone-800 rounded-full transition-all border border-stone-800">
-            <X className="h-5 w-5 text-stone-400" />
+          <button onClick={onClose} className="p-2 bg-stone-100 hover:bg-stone-200 rounded-full transition-all border border-stone-200">
+            <X className="h-5 w-5 text-stone-500" />
           </button>
         </div>
 
-        <div className="p-8 space-y-8">
+        <div className="p-10 space-y-8">
           {/* Informações Básicas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest ml-1">Nome da Marcenaria</label>
-              <div className="flex items-center gap-3 bg-stone-900/50 border border-stone-800 rounded-2xl px-4 py-3">
+              <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Nome da Marcenaria</label>
+              <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-4">
                 <User className="h-4 w-4 text-amber-500" />
-                <span className="text-sm font-bold text-stone-200">{marcenaria.nome}</span>
+                <span className="text-sm font-bold text-stone-900">{marcenaria.nome}</span>
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest ml-1">WhatsApp</label>
-              <div className="flex items-center gap-3 bg-stone-900/50 border border-stone-800 rounded-2xl px-4 py-3">
+              <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">WhatsApp</label>
+              <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-4">
                 <Phone className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-bold text-stone-200">{marcenaria.whatsapp || 'Não informado'}</span>
+                <span className="text-sm font-bold text-stone-900">{marcenaria.whatsapp || 'Não informado'}</span>
               </div>
             </div>
           </div>
 
           {/* Status e Ações Rápidas */}
-          <div className="bg-stone-900/30 p-6 rounded-3xl border border-stone-800 space-y-4">
+          <div className="bg-stone-50 p-8 rounded-3xl border border-stone-200 space-y-6">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-black text-stone-400 uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-xs font-black text-stone-500 uppercase tracking-widest flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-amber-500" />
                 Status da Conta
               </h4>

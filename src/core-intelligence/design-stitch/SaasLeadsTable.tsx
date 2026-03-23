@@ -18,11 +18,11 @@ interface LeadsTableProps {
 
 export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTableProps) {
   return (
-    <div className="bg-[#262626] border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
+    <div className="bg-white border border-stone-200 rounded-[32px] overflow-hidden shadow-xl">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-white/5 bg-black/20">
+            <tr className="border-b border-stone-100 bg-stone-50/50">
               <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Marcenaria</th>
               <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Contato</th>
               <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Status</th>
@@ -31,29 +31,29 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
               <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-stone-100">
             {data.map((item) => (
-              <tr key={item.id} className="hover:bg-stone-800/30 transition-colors group">
-                <td className="px-6 py-4">
+              <tr key={item.id} className="hover:bg-stone-50/50 transition-colors group">
+                <td className="px-8 py-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-wood-dark flex items-center justify-center border border-stone-700 font-bold text-stone-100 uppercase transition-all group-hover:border-amber-500/50 shadow-inner">
+                    <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center border border-stone-200 font-bold text-stone-800 uppercase transition-all group-hover:border-amber-500/50 shadow-inner">
                       {item.nome?.charAt(0) || 'M'}
                     </div>
-                    <span className="text-sm font-bold text-stone-200">{item.nome}</span>
+                    <span className="text-sm font-bold text-stone-900">{item.nome}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <span className="text-xs text-stone-400 font-medium">{item.whatsapp || 'Não informado'}</span>
+                <td className="px-8 py-5">
+                  <span className="text-xs text-stone-600 font-medium">{item.whatsapp || 'Não informado'}</span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-8 py-5">
                   <StatusBadge status={item.status_conta} />
                 </td>
-                <td className="px-6 py-4">
-                  <span className="text-[10px] font-black text-stone-400 bg-stone-800 px-2 py-1 rounded-md uppercase tracking-wider border border-stone-700">
+                <td className="px-8 py-5">
+                  <span className="text-[10px] font-black text-stone-600 bg-stone-100 px-2 py-1 rounded-md uppercase tracking-wider border border-stone-200">
                     {item.plano_atual}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-8 py-5">
                   <span className="text-xs text-stone-500 font-medium">
                     {new Date(item.created_at).toLocaleDateString('pt-BR')}
                   </span>
