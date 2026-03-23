@@ -1,87 +1,93 @@
-import { MoreHorizontal, ExternalLink, ShieldCheck, ShieldAlert, Clock } from 'lucide-react'
+import { Lock, Edit3, Trash2, Users, UserPlus, TrendingUp } from 'lucide-react'
 
-interface Marcenaria {
+interface Lead {
   id: string
   nome: string
-  whatsapp: string
+  whatsapp: string | null
   status_conta: string
   plano_atual: string
   created_at: string
 }
 
 interface LeadsTableProps {
-  data: Marcenaria[]
+  data: Lead[]
   onApprove: (id: string) => void
   onBlock: (id: string) => void
-  onManage: (marcenaria: Marcenaria) => void
+  onManage: (lead: Lead) => void
+}
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const configs: Record<string, { bg: string, text: string, label: string }> = {
+    active: { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'ACTIVE' },
+    inactive: { bg: 'bg-red-50', text: 'text-red-500', label: 'INACTIVE' },
+    PENDING_APPROVAL: { bg: 'bg-amber-50', text: 'text-amber-600', label: 'PENDING' },
+    blocked: { bg: 'bg-red-50', text: 'text-red-500', label: 'BLOCKED' },
+    past_due: { bg: 'bg-orange-50', text: 'text-orange-600', label: 'PAST DUE' }
+  }
+
+  const config = configs[status] || configs['PENDING_APPROVAL']
+
+  return (
+    <span className={`text-[10px] font-black px-3 py-1.5 rounded-full ${config.bg} ${config.text} border-none uppercase tracking-wider`}>
+      {config.label}
+    </span>
+  )
 }
 
 export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTableProps) {
   return (
-    <div className="bg-white border border-stone-200 rounded-[32px] overflow-hidden shadow-xl">
+    <div className="bg-white border border-stone-100 rounded-[24px] overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-stone-100 bg-stone-50/50">
-              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Marcenaria</th>
-              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Contato</th>
-              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Status</th>
-              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Plano</th>
-              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-left">Cadastro</th>
-              <th className="px-8 py-5 text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] text-right">Ações</th>
+            <tr className="border-b border-stone-50 bg-stone-50/30">
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-left">Nome do Cliente</th>
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-left">E-mail</th>
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-left">Status</th>
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-left">Plano</th>
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-left">Data de Cadastro</th>
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-left">Última Atividade</th>
+              <th className="px-8 py-6 text-[10px] font-black text-stone-400 uppercase tracking-widest text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-stone-50">
             {data.map((item) => (
               <tr key={item.id} className="hover:bg-stone-50/50 transition-colors group">
-                <td className="px-8 py-5">
+                <td className="px-8 py-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center border border-stone-200 font-bold text-stone-800 uppercase transition-all group-hover:border-amber-500/50 shadow-inner">
-                      {item.nome?.charAt(0) || 'M'}
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-xs shadow-sm">
+                      {item.nome?.substring(0, 2).toUpperCase() || 'WT'}
                     </div>
-                    <span className="text-sm font-bold text-stone-900">{item.nome}</span>
+                    <span className="text-sm font-bold text-stone-900 leading-none">{item.nome}</span>
                   </div>
                 </td>
-                <td className="px-8 py-5">
-                  <span className="text-xs text-stone-600 font-medium">{item.whatsapp || 'Não informado'}</span>
+                <td className="px-8 py-6">
+                  <span className="text-xs text-stone-500 font-medium">contato@exemplo.com</span>
                 </td>
-                <td className="px-8 py-5">
+                <td className="px-8 py-6">
                   <StatusBadge status={item.status_conta} />
                 </td>
-                <td className="px-8 py-5">
-                  <span className="text-[10px] font-black text-stone-600 bg-stone-100 px-2 py-1 rounded-md uppercase tracking-wider border border-stone-200">
-                    {item.plano_atual}
-                  </span>
+                <td className="px-8 py-6">
+                  <span className="text-xs font-bold text-stone-600">{item.plano_atual}</span>
                 </td>
-                <td className="px-8 py-5">
+                <td className="px-8 py-6">
                   <span className="text-xs text-stone-500 font-medium">
-                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                    {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2 translate-x-2 group-hover:translate-x-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    {item.status_conta === 'PENDING_APPROVAL' && (
-                      <button 
-                        onClick={() => onApprove(item.id)}
-                        className="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-lg transition-all"
-                        title="Aprovar"
-                      >
-                        <ShieldCheck size={16} />
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => onManage(item)}
-                      className="p-2 bg-stone-800 text-stone-400 hover:bg-stone-700 hover:text-stone-100 rounded-lg transition-all"
-                      title="Gerenciar"
-                    >
-                      <ExternalLink size={16} />
+                <td className="px-8 py-6">
+                  <span className="text-xs text-stone-500 font-medium">Just now</span>
+                </td>
+                <td className="px-8 py-6">
+                  <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onBlock(item.id)} className="p-2 hover:bg-stone-50 rounded-lg transition-colors text-stone-400 hover:text-red-500 border border-transparent hover:border-stone-200 shadow-sm">
+                      <Lock size={16} />
                     </button>
-                    <button 
-                      onClick={() => onBlock(item.id)}
-                      className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all"
-                      title="Bloquear"
-                    >
-                      <ShieldAlert size={16} />
+                    <button onClick={() => onManage(item)} className="p-2 hover:bg-stone-50 rounded-lg transition-colors text-stone-400 hover:text-blue-500 border border-transparent hover:border-stone-200 shadow-sm">
+                      <Edit3 size={16} />
+                    </button>
+                    <button className="p-2 hover:bg-stone-50 rounded-lg transition-colors text-stone-400 hover:text-red-600 border border-transparent hover:border-stone-200 shadow-sm">
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </td>
@@ -90,24 +96,6 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
           </tbody>
         </table>
       </div>
-    </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const configs: Record<string, { label: string, color: string, icon: any }> = {
-    active: { label: 'Ativo', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: ShieldCheck },
-    PENDING_APPROVAL: { label: 'Pendente', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20', icon: Clock },
-    blocked: { label: 'Bloqueado', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: ShieldAlert },
-    trial: { label: 'Trial', color: 'bg-stone-700 text-stone-300 border-stone-600', icon: Clock },
-  }
-
-  const config = configs[status] || { label: status, color: 'bg-stone-800 text-stone-400 border-stone-700', icon: MoreHorizontal }
-
-  return (
-    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${config.color}`}>
-      <config.icon size={10} strokeWidth={3} />
-      {config.label}
     </div>
   )
 }

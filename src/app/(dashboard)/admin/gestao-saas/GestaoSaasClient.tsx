@@ -6,11 +6,12 @@ import { SaasLeadsTable } from '@/core-intelligence/design-stitch/SaasLeadsTable
 import { CustomerDetailModal } from '@/core-intelligence/design-stitch/CustomerDetailModal'
 import { toggleMarcenariaStatus, grantTemporaryAccess } from '@/app/actions/admin-actions'
 import { useRouter } from 'next/navigation'
+import { UserPlus } from 'lucide-react'
 
 interface Marcenaria {
   id: string
   nome: string
-  whatsapp: string
+  whatsapp: string | null
   status_conta: string
   plano_atual: string
   created_at: string
@@ -49,20 +50,21 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      {/* Header com Estilo WoodFlow Organico */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-12 border-b border-stone-200">
-        <div className="space-y-4">
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-            <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em]">SaaS Command Center</span>
-          </div>
-          <h1 className="text-6xl font-black text-stone-900 tracking-tighter uppercase italic leading-none">
-            Gestão <span className="text-amber-500 underline decoration-stone-200 underline-offset-[12px]">SaaS</span>
+      {/* Header Estilo Reference Design */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-10">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black text-stone-900 tracking-tight">
+            Gestão <span className="text-stone-900">SaaS</span>
           </h1>
-          <p className="text-stone-500 text-sm font-medium max-w-lg leading-relaxed">
-            Controle total da plataforma WoodFlow. Visualize métricas, gerencie acessos e tome decisões críticas em tempo real.
+          <p className="text-stone-500 text-sm font-medium">
+            Gerencie sua base de usuários e o ciclo de vida das assinaturas.
           </p>
         </div>
+        
+        <button className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95">
+          <UserPlus className="h-4 w-4" />
+          + Novo Cliente
+        </button>
       </div>
 
       <SaasStatsCards 
@@ -74,10 +76,10 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
       <div className="space-y-6">
         <div className="flex justify-between items-end">
           <div className="space-y-1">
-            <h2 className="text-stone-100 text-lg font-black uppercase tracking-tight">Base de Operações</h2>
-            <div className="h-1 w-20 bg-amber-500 rounded-full" />
+            <h2 className="text-stone-900 text-lg font-black uppercase tracking-tight">Base de Operações</h2>
+            <div className="h-1 w-20 bg-blue-600 rounded-full" />
           </div>
-          <span className="text-stone-600 text-[10px] font-black uppercase tracking-widest bg-stone-900 px-3 py-1 rounded-full border border-stone-800">
+          <span className="text-stone-500 text-[10px] font-black uppercase tracking-widest bg-stone-100 px-3 py-1 rounded-full border border-stone-200">
             {initialData.length} Marcenarias Registradas
           </span>
         </div>
@@ -100,10 +102,10 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
       )}
 
       {isUpdating && (
-        <div className="fixed inset-0 bg-stone-950/40 backdrop-blur-sm z-[60] flex items-center justify-center cursor-wait">
-          <div className="bg-stone-900 border border-stone-800 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
-            <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-black text-stone-100 uppercase tracking-widest">Sincronizando Banco...</span>
+        <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-[60] flex items-center justify-center cursor-wait">
+          <div className="bg-white border border-stone-200 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs font-black text-stone-900 uppercase tracking-widest">Sincronizando Banco...</span>
           </div>
         </div>
       )}
