@@ -21,9 +21,5 @@ export default async function GestaoSaasPage() {
     return <div>Erro ao carregar dados do painel SaaS.</div>
   }
 
-  return (
-    <div className="min-h-screen bg-stone-950">
-      <GestaoSaasClient initialData={marcenarias || []} />
-    </div>
-  )
+  return <GestaoSaasClient initialData={marcenarias || []} />
 }
