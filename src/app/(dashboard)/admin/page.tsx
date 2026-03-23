@@ -12,7 +12,7 @@ export default async function AdminPage() {
 
   const { data: marcenarias, error } = await supabase
     .from('marcenarias')
-    .select('*')
+    .select('*, profiles!fk_marcenaria_dono(full_name)')
     .order('nome', { ascending: true })
 
   if (error) {

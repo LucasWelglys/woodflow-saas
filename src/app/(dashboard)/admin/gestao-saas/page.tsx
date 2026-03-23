@@ -13,10 +13,7 @@ export default async function GestaoSaasPage() {
   // Super-Admin Power: Buscar TODAS as marcenarias com dados do dono
   const { data: marcenarias, error } = await supabase
     .from('marcenarias')
-    .select(`
-      *,
-      profiles!fk_marcenaria_dono(full_name)
-    `)
+    .select('*, profiles!fk_marcenaria_dono(full_name)')
     .order('created_at', { ascending: false })
 
   if (error) {
