@@ -127,9 +127,20 @@ export async function updateSession(request: NextRequest) {
     }
 
     // 4. Proteção de Rota /admin (Apenas super-admin)
+    // 4. Proteção de Rota /admin
+    // Super-Admin (role ou email) já passou no bypass acima (line 81, 98)
+    // Para outros usuários, só permitimos se tiverem plano 'Admin'
     if (path.startsWith('/admin')) {
-      url.pathname = '/'
-      return NextResponse.redirect(url)
+      const { data: marcenariaPlan } = await supabase
+        .from('marcenarias')
+        .select('plano_atual')
+        .eq('id', profile?.tenant_id)
+        .single()
+      
+      if (marcenariaPlan?.plano_atual !== 'Admin') {
+        url.pathname = '/'
+        return NextResponse.redirect(url)
+      }
     }
 
     // 5. Lógica de Bloqueio de Assinatura (Legacy/Profile - Backup)

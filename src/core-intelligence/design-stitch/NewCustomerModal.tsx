@@ -5,9 +5,10 @@ interface NewCustomerModalProps {
   onClose: () => void
   onCreate: (data: any) => void
   isSubmitting?: boolean
+  isSuperAdmin?: boolean
 }
 
-export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustomerModalProps) {
+export function NewCustomerModal({ onClose, onCreate, isSubmitting, isSuperAdmin = false }: NewCustomerModalProps) {
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -94,7 +95,7 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
                   <option value="Plano Pro">Plano Pro</option>
                   <option value="Plano Enterprise">Plano Enterprise</option>
                   <option value="Plano Legacy">Plano Legacy</option>
-                  <option value="Admim">Admim</option>
+                  {isSuperAdmin && <option value="Admin">Admin</option>}
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
               </div>

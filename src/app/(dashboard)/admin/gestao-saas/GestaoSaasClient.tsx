@@ -5,7 +5,7 @@ import { SaasStatsCards } from '@/core-intelligence/design-stitch/SaasStatsCards
 import { SaasLeadsTable } from '@/core-intelligence/design-stitch/SaasLeadsTable'
 import { CustomerDetailModal } from '@/core-intelligence/design-stitch/CustomerDetailModal'
 import { NewCustomerModal } from '@/core-intelligence/design-stitch/NewCustomerModal'
-import { toggleMarcenariaStatus, grantTemporaryAccess } from '@/app/actions/admin-actions'
+import { toggleMarcenariaStatus, grantTemporaryAccess, createMarcenaria } from '@/app/actions/admin-actions'
 import { useRouter } from 'next/navigation'
 import { UserPlus } from 'lucide-react'
 
@@ -22,7 +22,13 @@ interface Marcenaria {
   acesso_temporario_ate?: string | null
 }
 
-export default function GestaoSaasClient({ initialData }: { initialData: Marcenaria[] }) {
+export default function GestaoSaasClient({ 
+  initialData, 
+  isSuperAdmin = false 
+}: { 
+  initialData: Marcenaria[], 
+  isSuperAdmin?: boolean 
+}) {
   const [selectedMarcenaria, setSelectedMarcenaria] = useState<Marcenaria | null>(null)
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -55,12 +61,15 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
 
   const handleCreateCustomer = async (data: any) => {
     setIsUpdating(true)
-    // Placeholder for actual creation logic
-    console.log('Creating customer:', data)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsNewCustomerModalOpen(false)
+    const res = await createMarcenaria(data)
+    if (res.success) {
+      setIsNewCustomerModalOpen(false)
+      setSelectedMarcenaria(null)
+      router.refresh()
+    } else {
+      alert(res.error || 'Erro ao criar cliente')
+    }
     setIsUpdating(false)
-    router.refresh()
   }
 
   return (
@@ -76,13 +85,15 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
           </p>
         </div>
         
-        <button 
-          onClick={() => setIsNewCustomerModalOpen(true)}
-          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
-        >
-          <UserPlus className="h-4 w-4" />
-          + Novo Cliente
-        </button>
+        {isSuperAdmin && (
+          <button 
+            onClick={() => setIsNewCustomerModalOpen(true)}
+            className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
+          >
+            <UserPlus className="h-4 w-4" />
+            + Novo Cliente
+          </button>
+        )}
       </div>
 
       <SaasStatsCards 
@@ -124,6 +135,7 @@ export default function GestaoSaasClient({ initialData }: { initialData: Marcena
           onClose={() => setIsNewCustomerModalOpen(false)}
           onCreate={handleCreateCustomer}
           isSubmitting={isUpdating}
+          isSuperAdmin={isSuperAdmin}
         />
       )}
 
