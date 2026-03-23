@@ -111,6 +111,13 @@ export async function updateSession(request: NextRequest) {
       ? new Date(marcenaria.acesso_temporario_ate) > now 
       : false
 
+    // Se a conta estiver aguardando aprovação
+    const isPending = marcenaria?.status_conta === 'PENDING_APPROVAL'
+    if (isPending && !path.startsWith('/status')) {
+      url.pathname = '/status/aguardando-aprovacao'
+      return NextResponse.redirect(url)
+    }
+
     // Se a conta estiver bloqueada ou inadimplente, e NÃO houver acesso temporário
     const isBlocked = marcenaria?.status_conta === 'blocked' || marcenaria?.status_conta === 'past_due'
     
