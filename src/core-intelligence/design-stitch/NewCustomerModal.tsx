@@ -90,6 +90,7 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
                   value={formData.plano}
                   onChange={(e) => setFormData({ ...formData, plano: e.target.value })}
                 >
+                  <option value="Plano Grátis">Plano Grátis</option>
                   <option value="Plano Pro">Plano Pro</option>
                   <option value="Plano Enterprise">Plano Enterprise</option>
                   <option value="Plano Legacy">Plano Legacy</option>
@@ -143,7 +144,7 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-800 hover:bg-blue-900 disabled:opacity-50 text-white px-10 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center gap-2"
+              className="bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white px-10 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center gap-2"
             >
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
