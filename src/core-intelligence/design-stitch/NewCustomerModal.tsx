@@ -12,7 +12,7 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
     nome: '',
     email: '',
     telefone: '',
-    plano: 'Pro Architect',
+    plano: 'Plano Grátis',
     status: 'Pending',
     liberarAcesso: false
   })
@@ -94,6 +94,7 @@ export function NewCustomerModal({ onClose, onCreate, isSubmitting }: NewCustome
                   <option value="Plano Pro">Plano Pro</option>
                   <option value="Plano Enterprise">Plano Enterprise</option>
                   <option value="Plano Legacy">Plano Legacy</option>
+                  <option value="Admim">Admim</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
               </div>
