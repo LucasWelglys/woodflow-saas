@@ -35,8 +35,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Governance (Core Intelligence & Planning)
-CORE-INTELLIGENCE/
+# Governance (Planning)
 mcp-servers/
 skills/
 *.md
