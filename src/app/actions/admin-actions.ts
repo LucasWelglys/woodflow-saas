@@ -3,11 +3,10 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
-export async function toggleMarcenariaStatus(id: string, newStatus: 'active' | 'blocked' | 'trial' | 'past_due') {
+export async function toggleMarcenariaStatus(id: string, newStatus: string) {
   const supabase = createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
-  // Verificação básica de segurança
   if (user?.email !== 'lucaswelglys@gmail.com') {
     return { success: false, error: 'Não autorizado' }
   }
@@ -23,6 +22,7 @@ export async function toggleMarcenariaStatus(id: string, newStatus: 'active' | '
   }
 
   revalidatePath('/admin')
+  revalidatePath('/admin/gestao-saas')
   return { success: true }
 }
 
@@ -50,5 +50,6 @@ export async function grantTemporaryAccess(id: string, hours: number) {
   }
 
   revalidatePath('/admin')
+  revalidatePath('/admin/gestao-saas')
   return { success: true, data }
 }
