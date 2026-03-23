@@ -15,9 +15,7 @@ export default async function GestaoSaasPage() {
     .from('marcenarias')
     .select(`
       *,
-      profiles:dono_id (
-        full_name
-      )
+      profiles(full_name)
     `)
     .order('created_at', { ascending: false })
 
@@ -27,10 +25,16 @@ export default async function GestaoSaasPage() {
   }
 
   // Transformar os dados para o formato esperado pelo client
-  const transformedData = (marcenarias || []).map(m => ({
-    ...m,
-    nome_dono: (m as any).profiles?.full_name || 'Sem Nome'
-  }))
+  const transformedData = (marcenarias || []).map(m => {
+    const profile = Array.isArray((m as any).profiles) 
+      ? (m as any).profiles[0] 
+      : (m as any).profiles
+
+    return {
+      ...m,
+      nome_dono: profile?.full_name || 'Sem Nome'
+    }
+  })
 
   return <GestaoSaasClient initialData={transformedData} />
 }
