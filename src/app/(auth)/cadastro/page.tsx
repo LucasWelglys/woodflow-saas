@@ -8,10 +8,20 @@ import { Hammer } from 'lucide-react'
 export default function SignupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '')
+    const maskedValue = value
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .slice(0, 15)
+    setWhatsapp(maskedValue)
+  }
   const supabase = createClient()
 
   async function handleSignup(e: React.FormEvent) {
@@ -20,7 +30,7 @@ export default function SignupPage() {
     setError(null)
 
     // Sanitização de Email
-    const sanitizedEmail = email.trim().toLowerCase().replace(/\.+$/, '')
+    const sanitizedEmail = email.trim().toLowerCase()
 
     const { error } = await supabase.auth.signUp({
       email: sanitizedEmail,
@@ -44,7 +54,9 @@ export default function SignupPage() {
           .from('marcenarias')
           .insert({
             nome: name,
-            dono_id: newUser.id
+            dono_id: newUser.id,
+            whatsapp,
+            status_conta: 'PENDING_APPROVAL'
           })
           .select()
           .single()
@@ -72,8 +84,11 @@ export default function SignupPage() {
           </div>
           <h2 className="text-2xl font-bold text-wood-dark">Verifique seu email</h2>
           <p className="text-stone-600">
-            Enviamos um link de confirmação para <strong>{email.trim().toLowerCase().replace(/\.+$/, '')}</strong>. Por favor, valide seu acesso para continuar.
+            Enviamos um link de confirmação para <strong>{email.trim().toLowerCase()}</strong>. Por favor, valide seu acesso para continuar.
           </p>
+          <div className="mt-4 p-4 bg-stone-50 rounded-xl border border-stone-100 text-sm text-stone-500 italic">
+            Importante: Após a confirmação do seu e-mail, o acesso total ao sistema dependerá da liberação por parte do administrador.
+          </div>
           <div className="mt-6">
             <Link href="/login" className="text-wood-mid font-medium hover:underline">
               Voltar para o login
@@ -131,9 +146,22 @@ export default function SignupPage() {
                 autoComplete="email"
                 required
                 className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-stone-300 placeholder-stone-400 text-stone-900 focus:outline-none focus:ring-wood-mid focus:border-wood-mid focus:z-10 sm:text-sm"
-                placeholder="Email"
+                placeholder="Email corporativo"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="whatsapp" className="sr-only">WhatsApp</label>
+              <input
+                id="whatsapp"
+                name="whatsapp"
+                type="text"
+                required
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 border border-stone-300 placeholder-stone-400 text-stone-900 focus:outline-none focus:ring-wood-mid focus:border-wood-mid focus:z-10 sm:text-sm"
+                placeholder="WhatsApp (com DDD)"
+                value={whatsapp}
+                onChange={handleWhatsappChange}
               />
             </div>
             <div>
