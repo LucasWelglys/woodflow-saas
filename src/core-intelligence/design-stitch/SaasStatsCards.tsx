@@ -29,8 +29,8 @@ export function SaasStatsCards({ totalSubscribers, totalLeads, mrr }: StatsCards
       value: `R$ ${mrr.toLocaleString('pt-BR')}`,
       suffix: '(MRR)',
       icon: TrendingUp,
-      color: 'text-wood-light',
-      bg: 'bg-wood-light/10'
+      color: 'text-stone-300',
+      bg: 'bg-stone-800'
     }
   ]
 

@@ -25,8 +25,8 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
     : false
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-stone-950 w-full max-w-2xl rounded-[32px] shadow-2xl border border-stone-800 overflow-hidden my-auto animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-stone-950 w-full max-w-2xl rounded-[32px] shadow-2xl border border-stone-800 overflow-hidden animate-in fade-in zoom-in duration-300">
         {/* Header */}
         <div className="px-8 py-6 border-b border-stone-900 bg-stone-900/30 flex justify-between items-center">
           <div>
@@ -80,13 +80,13 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
             <div className="flex gap-3">
               <button 
                 onClick={() => onUpdateStatus(marcenaria.id, 'active')}
-                className="flex-1 py-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-lg shadow-emerald-500/5"
+                className="flex-1 py-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all shadow-lg"
               >
                 Ativar / Aprovar
               </button>
               <button 
                 onClick={() => onUpdateStatus(marcenaria.id, 'blocked')}
-                className="flex-1 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/5"
+                className="flex-1 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-lg"
               >
                 Bloquear
               </button>
@@ -108,8 +108,8 @@ export function CustomerDetailModal({ marcenaria, onClose, onSaveAccess, onUpdat
               {isTempActive && (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs text-emerald-500 font-bold italic">
-                    Acesso concedido até: {new Date(marcenaria.acesso_temporario_ate!).toLocaleString('pt-BR')}
+                  <span className="text-xs text-emerald-500 font-bold">
+                    Ativo até: {new Date(marcenaria.acesso_temporario_ate!).toLocaleString('pt-BR')}
                   </span>
                 </div>
               )}

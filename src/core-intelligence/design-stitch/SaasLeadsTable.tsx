@@ -23,11 +23,11 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-stone-800 bg-stone-900/50">
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Marcenaria</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Contato</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Status</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Plano</th>
-              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest">Cadastro</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Marcenaria</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Contato</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Status</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Plano</th>
+              <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-left">Cadastro</th>
               <th className="px-6 py-4 text-[10px] font-bold text-stone-500 uppercase tracking-widest text-right">Ações</th>
             </tr>
           </thead>
@@ -36,7 +36,7 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
               <tr key={item.id} className="hover:bg-stone-800/30 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-wood-dark flex items-center justify-center border border-stone-700 font-bold text-stone-100 uppercase transition-all group-hover:border-amber-500/50">
+                    <div className="w-10 h-10 rounded-xl bg-wood-dark flex items-center justify-center border border-stone-700 font-bold text-stone-100 uppercase transition-all group-hover:border-amber-500/50 shadow-inner">
                       {item.nome?.charAt(0) || 'M'}
                     </div>
                     <span className="text-sm font-bold text-stone-200">{item.nome}</span>
@@ -72,7 +72,7 @@ export function SaasLeadsTable({ data, onApprove, onBlock, onManage }: LeadsTabl
                     <button 
                       onClick={() => onManage(item)}
                       className="p-2 bg-stone-800 text-stone-400 hover:bg-stone-700 hover:text-stone-100 rounded-lg transition-all"
-                      title="Detalhes"
+                      title="Gerenciar"
                     >
                       <ExternalLink size={16} />
                     </button>
